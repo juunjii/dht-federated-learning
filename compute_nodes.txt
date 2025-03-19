@@ -1,0 +1,4 @@
+localhost, 9091
+csel-kh1250-01.cselabs.umn.edu, 9092
+csel-kh1250-11.cselabs.umn.edu, 9092
+csel-kh1250-20.cselabs.umn.edu, 9092 
