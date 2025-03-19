@@ -11,7 +11,7 @@ service super {
     void confirm_join(1: i32 node_id) 
     
     # Returns a random connection point (node) to join the network 
-    NodeInfo get_node() 
+    Node get_node() 
     
     # Debugging
     string print_info()

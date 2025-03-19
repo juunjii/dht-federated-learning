@@ -19,6 +19,8 @@ from thrift.server import TServer
 
 # from coordinator import coordinator
 from super import super
+from super.ttypes import Node
+import random
 from ML import *
 
 
@@ -149,8 +151,29 @@ class SuperHandler:
     Returns a random connection point (node) to join the network 
     '''
     def get_node(self):
+        # Error response if no active nodes in network
         if not self.active_nodes:
-            return
+            return None, None
+        
+        # Random active node
+        random_id = random.choice(list(self.active_nodes.keys()))
+        ip, port = self.active_nodes[random_id]
+
+        return (ip, port)
+
 
     def print_info(self):
-        pass
+        info = "----------------------\n"
+        info += "Supernode Information\n"
+        info += "---------------------\n"
+        info += f"Max nodes: {self.max_nodes}\n"
+        info += f"Active nodes: {len(self.active_nodes)}\n"
+        info += "Node addresses:\n"
+        
+        for node_id, address in self.active_nodes.items():
+            info += f"  Node {node_id}: {address[0]}:{address[1]}\n"
+        
+        if self.node_joining is not None:
+            info += f"Currently joining node: {self.node_joining}\n"
+        
+        return info
