@@ -32,7 +32,7 @@ class SuperHandler:
         self.max_nodes = max_nodes
 
         # Dict storing active nodes in the network
-        # {node_id: (ip: port}
+        # {node_id: (ip, port}
         self.active_nodes = {}
 
         # Dict storing nodes from compute_nodes.txt
@@ -66,6 +66,7 @@ class SuperHandler:
     Generate unique id for nodes
     '''
     def generate_id(self, max_nodes) :
+        # Sanitize input
         if max_nodes > 10:
             return -1
 
@@ -108,19 +109,43 @@ class SuperHandler:
     '''
     def confirm_join(self, node_id):
 
+        # Sanitize input
+        if (node_id is None) or (node_id < 0 and node_id > 9):
+            print(f"Node {node_id} does not have a valid id")
+            return
+        
         # Check node join status
         if node_id != self.node_joining:
             print(f"Node {node_id} did not join the network")
             return
         
-        # Node succesfully joined!
-        # Get host and ip of node
-        for 
-
-        # Update active node dict
-        self.active_nodes[node_id] = port
-
+        port = None
+        # Get node's port
+        # Loop through possible host
+        for available_port in self.compute_nodes:
+            # Unpack tuple (ip, port)
+            for _, p in self.active_nodes.values():
+                if available_port != p:
+                    port = available_port
+                    break
         
+        # Wrong port used for node
+        if port is None:
+            print(f"Node {node_id} port value not in list of available ports")
+            return
+        
+        # Host
+        ip = self.compute_nodes[port]
+        
+        # Track active nodes {node id: (ip, port)}
+        self.active_nodes[node_id] = (ip, port)
+        
+        # Clear the current joining node
+        self.current_joining_node = None
+        
+        print(f"Node {node_id} confirmed join with address: {self.active_nodes[node_id]}")
+
+    
 
     def get_node(self):
         pass
