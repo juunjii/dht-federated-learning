@@ -75,6 +75,7 @@ class SuperHandler:
         
 
     ''' 
+    Returns a unique ID to use when joining the network 
     '''
     def request_join(self, port):
         # Sanitize input
@@ -95,13 +96,21 @@ class SuperHandler:
         # Tracks current node joining network
         self.node_joining = node_id
 
+        # Update active node dict
+        self.active_nodes[node_id] = port
+
         print(f"Node joining with port {port} assigned ID: {node_id}")
 
         return node_id
        
 
+    '''
+    Confirm a new node's status in the network 
+    '''
     def confirm_join(self, node_id):
         pass
+
+        
 
     def get_node(self):
         pass
