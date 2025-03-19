@@ -22,6 +22,10 @@ from super import super
 from ML import *
 
 
+# Macro for max nodes possbile in network
+MAX_NODES = 10
+
+
 class SuperHandler:
     def __init__(self, max_nodes=10):
         # Maximum nodes in the network
@@ -33,7 +37,7 @@ class SuperHandler:
         # Dict storing nodes from compute_nodes.txt
         self.compute_nodes = {}
 
-        # Set to keep track of node IDs (ensures uniqueness)
+        # Set to keep track of node IDs of active nodes 
         self.node_ids = set()
 
         # To enforce one node joining network per time
@@ -56,35 +60,45 @@ class SuperHandler:
             print(f"Error parsing compute nodes: {e}")
             sys.exit(1)
 
-    def generate_id(self, active_nodes,max_nodes) :
-        # ID be between 0 and max num of nodes  - 1
-        node_id = active_nodes % max_nodes
+    '''
+    Generate unique id for nodes
+    '''
+    def generate_id(self, max_nodes) :
+        if max_nodes > 10:
+            return -1
 
-        if node_id not in self.node_ids:
-            return node_id
-        else:
-            print("Node id already present in the network")
-
+        # Ensures ID between 0 and max num of nodes - 1
+        for node_id in range(max_nodes):
+            if node_id not in self.node_ids:
+                self.node_ids.add(node_id)
+                return node_id
         
 
-
+    ''' 
+    '''
     def request_join(self, port):
-        # Populate the active node dict 
-        self.generate_id()
+        # Sanitize input
+        if port not in self.compute_nodes:
+            print(f"Error: Port {port} is not in config file.")
+            return -1
 
-        # Cross reference port num with config file
+        # Ensure singular node joins network at a time
+        if self.node_joining is not None:
+            print(f"NACK: Node {self.node_joining} is joining the network...Try again later...")
+            return -1
+        
+        # Return unique node id
+        node_id = self.generate_id(self.max_nodes)
+        if node_id == -1:
+            print(f"Error: {self.max_nodes} exceeds the maximum number of possible nodes in the network - {MAX_NODES}")
 
+        # Tracks current node joining network
+        self.node_joining = node_id
 
-        # Store in active node dict
+        print(f"Node joining with port {port} assigned ID: {node_id}")
 
-
-        # One node join at the same time 
-
-
-        # Send NACK if 
-
-
-        pass
+        return node_id
+       
 
     def confirm_join(self, node_id):
         pass
