@@ -145,10 +145,12 @@ class SuperHandler:
         
         print(f"Node {node_id} confirmed join with address: {self.active_nodes[node_id]}")
 
-    
-
+    '''
+    Returns a random connection point (node) to join the network 
+    '''
     def get_node(self):
-        pass
+        if not self.active_nodes:
+            return
 
     def print_info(self):
         pass
