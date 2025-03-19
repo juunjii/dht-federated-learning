@@ -36,7 +36,7 @@ class SuperHandler:
         self.active_nodes = {}
 
         # Dict storing nodes from compute_nodes.txt
-        # {ip : port}
+        # {port : host}
         self.compute_nodes = {}
 
         # Set to keep track of node IDs of active nodes 
@@ -57,7 +57,7 @@ class SuperHandler:
             with open('compute_nodes.txt', 'r') as file:
                 for line in file:
                     host, port = line.strip().split(',')
-                    self.compute_nodes[host] = int(port)
+                    self.compute_nodes[int(port)] = host
         except Exception as e:
             print(f"Error parsing compute nodes: {e}")
             sys.exit(1)
@@ -114,7 +114,7 @@ class SuperHandler:
             return
         
         # Node succesfully joined!
-
+        # Get host and ip of node
         for 
 
         # Update active node dict
