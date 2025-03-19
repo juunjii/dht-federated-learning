@@ -21,7 +21,7 @@ from super import super
 def main():
     
     # Make socket
-    transport = TSocket.TSocket('localhost', 9090)
+    transport = TSocket.TSocket('127.0.0.1', 9091)
     transport = TTransport.TBufferedTransport(transport)
     protocol = TBinaryProtocol.TBinaryProtocol(transport)
 
@@ -32,10 +32,13 @@ def main():
         transport.open()
 
         # Test the supernode functionality
-        print("Testing supernode functionality:")
+        print("Testing supernode functionality:\n")
         
         # Print initial info
-        print("\nInitial supernode info:")
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print("Initial supernode info:")
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~")
+
         print(client.print_info())
 
         node_id = client.request_join(8000)
@@ -47,10 +50,12 @@ def main():
         
         # Try to get a node
         node_address = client.get_node()
-        print(f"Got node address: {node_address}")
+        print(f"Got node address: {node_address}\n")
         
         # Print updated info
-        print("\nUpdated supernode info:")
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print("Updated supernode info:")
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~")
         print(client.print_info())
 
         # Close!

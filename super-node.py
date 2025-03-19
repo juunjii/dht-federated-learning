@@ -114,16 +114,22 @@ class SuperHandler:
         if node_id != self.node_joining:
             print(f"Node {node_id} did not join the network")
             return
-        
+
         port = None
         # Get node's port
         # Loop through possible host
-        for available_port in self.compute_nodes:
-            # Unpack tuple (ip, port)
-            for _, p in self.active_nodes.values():
-                if available_port != p:
-                    port = available_port
-                    break
+        for valid_port in self.compute_nodes:
+            # No active nodes in network
+            if not self.active_nodes:
+                port = valid_port
+            else: 
+                # Unpack tuple (ip, port)
+                for id, p in self.active_nodes.values():
+                    print(f"p is {p}")
+                    # Ensure that the port is valid
+                    if valid_port != p:
+                        port = valid_port
+                        break
         
         # Wrong port used for node
         if port is None:
@@ -147,13 +153,13 @@ class SuperHandler:
     def get_node(self):
         # Error response if no active nodes in network
         if not self.active_nodes:
-            return None, None
+            return Node(None, None)
         
         # Random active node
         random_id = random.choice(list(self.active_nodes.keys()))
         ip, port = self.active_nodes[random_id]
 
-        return (ip, port)
+        return Node(ip = ip, port = port)
 
     '''
     Debugging & for Phase 1
@@ -176,7 +182,7 @@ class SuperHandler:
     
 def main():
     if len(sys.argv) != 3:
-        print("Usage: python super-node.py <port> <max_nodes>")
+        print("Usage: python3 super-node.py <port> <max_nodes>")
         sys.exit(1)
 
     port= int(sys.argv[1])
