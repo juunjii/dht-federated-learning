@@ -1,11 +1,6 @@
 import sys
-import os
-import threading
 import random
 import glob
-from collections import deque
-import numpy as np
-
 
 sys.path.append('gen-py')
 sys.path.insert(0, glob.glob('../thrift-0.19.0/lib/py/build/lib*')[0])
@@ -20,7 +15,6 @@ from thrift.server import TServer
 # from coordinator import coordinator
 from super import super
 from super.ttypes import Node
-import random
 from ML import *
 
 
@@ -202,9 +196,9 @@ def main():
     server = TServer.TSimpleServer(processor, transport, tfactory, pfactory)
 
     print(f"Starting supernode on port {port} with network capacity of {max_nodes}...")
-    handler.print_info()
  
     server.serve()
+    
 
 if __name__ == '__main__':
     main()
