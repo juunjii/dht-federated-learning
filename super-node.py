@@ -32,9 +32,11 @@ class SuperHandler:
         self.max_nodes = max_nodes
 
         # Dict storing active nodes in the network
+        # {node_id: (ip: port}
         self.active_nodes = {}
 
         # Dict storing nodes from compute_nodes.txt
+        # {ip : port}
         self.compute_nodes = {}
 
         # Set to keep track of node IDs of active nodes 
@@ -55,7 +57,7 @@ class SuperHandler:
             with open('compute_nodes.txt', 'r') as file:
                 for line in file:
                     host, port = line.strip().split(',')
-                    self.compute_nodes[int(port)] = host
+                    self.compute_nodes[host] = int(port)
         except Exception as e:
             print(f"Error parsing compute nodes: {e}")
             sys.exit(1)
@@ -102,17 +104,21 @@ class SuperHandler:
        
 
     '''
-    Confirm a new node's status in the network 
+    Confirm a new node's join status in the network 
     '''
     def confirm_join(self, node_id):
 
         # Check node join status
-        if node_id == self.node_joining:
-            print(f"NACK: Node {self.node_joining} is joining the network...Try again later...")
+        if node_id != self.node_joining:
+            print(f"Node {node_id} did not join the network")
+            return
+        
+        # Node succesfully joined!
 
+        for 
 
-        # # Update active node dict
-        # self.active_nodes[node_id] = port
+        # Update active node dict
+        self.active_nodes[node_id] = port
 
         
 
