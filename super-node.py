@@ -55,3 +55,42 @@ class SuperHandler:
         except Exception as e:
             print(f"Error parsing compute nodes: {e}")
             sys.exit(1)
+
+    def generate_id(self, active_nodes,max_nodes) :
+        # ID be between 0 and max num of nodes  - 1
+        node_id = active_nodes % max_nodes
+
+        if node_id not in self.node_ids:
+            return node_id
+        else:
+            print("Node id already present in the network")
+
+        
+
+
+    def request_join(self, port):
+        # Populate the active node dict 
+        self.generate_id()
+
+        # Cross reference port num with config file
+
+
+        # Store in active node dict
+
+
+        # One node join at the same time 
+
+
+        # Send NACK if 
+
+
+        pass
+
+    def confirm_join(self, node_id):
+        pass
+
+    def get_node(self):
+        pass
+
+    def print_info(self):
+        pass
