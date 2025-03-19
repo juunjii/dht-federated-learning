@@ -96,9 +96,6 @@ class SuperHandler:
         # Tracks current node joining network
         self.node_joining = node_id
 
-        # Update active node dict
-        self.active_nodes[node_id] = port
-
         print(f"Node joining with port {port} assigned ID: {node_id}")
 
         return node_id
@@ -108,7 +105,14 @@ class SuperHandler:
     Confirm a new node's status in the network 
     '''
     def confirm_join(self, node_id):
-        pass
+
+        # Check node join status
+        if node_id == self.node_joining:
+            print(f"NACK: Node {self.node_joining} is joining the network...Try again later...")
+
+
+        # # Update active node dict
+        # self.active_nodes[node_id] = port
 
         
 
