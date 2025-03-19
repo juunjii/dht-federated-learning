@@ -161,7 +161,9 @@ class SuperHandler:
 
         return (ip, port)
 
-
+    '''
+    Debugging & for Phase 1
+    '''
     def print_info(self):
         info = "----------------------\n"
         info += "Supernode Information\n"
@@ -177,3 +179,32 @@ class SuperHandler:
             info += f"Currently joining node: {self.node_joining}\n"
         
         return info
+    
+def main():
+    if len(sys.argv) != 3:
+        print("Usage: python super-node.py <port> <max_nodes>")
+        sys.exit(1)
+
+    port= int(sys.argv[1])
+    max_nodes = int(sys.argv[2])
+    
+    # Network maximum capacity = 10 nodes
+    if max_nodes not in range(1, 11):
+        print("Network capacity must be between 1 - 10 nodes")
+        sys.exit(1)
+    
+    handler = SuperHandler(max_nodes)
+    processor = super.Processor(handler)
+    transport = TSocket.TServerSocket(port=port)
+    tfactory = TTransport.TBufferedTransportFactory()
+    pfactory = TBinaryProtocol.TBinaryProtocolFactory()
+
+    server = TServer.TSimpleServer(processor, transport, tfactory, pfactory)
+
+    print(f"Starting supernode on port {port} with network capacity of {max_nodes}...")
+    handler.print_info()
+ 
+    server.serve()
+
+if __name__ == '__main__':
+    main()
