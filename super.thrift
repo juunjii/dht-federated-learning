@@ -1,4 +1,4 @@
-service SupernodeService {
+service super {
     # Returns an ID to use when joining the network 
     i32 request_join(1: i32 port) 
     
