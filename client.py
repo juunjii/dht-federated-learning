@@ -65,7 +65,7 @@ def main():
         print(f"Thrift Exception: {tx.message}")
 
 
-if __name__ == '__main__':
+if name__ == '__main__':
     try:
         main()
     except Thrift.TException as tx:
