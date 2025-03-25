@@ -88,10 +88,10 @@ class ComputeNodeHandler:
             protocol = TBinaryProtocol.TBinaryProtocol(transport)
             client = compute.Client(protocol)
             transport.open()
-            return client, transport  # Returning both client and transport
+            return client, transport  
         except Exception as e:
             print(f"Failed to connect to node {host}:{port} - {e}")
-            return None, None  # Handle failure
+            return None, None  
     
     def unpack_add(self, add):
         host, port = add
