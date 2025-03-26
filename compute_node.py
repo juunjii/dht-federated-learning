@@ -59,6 +59,10 @@ class ComputeNodeHandler:
     Key value: 0 - (MAX_NODES -1)
     '''
     def hash_filename(self, fname):
+         # Sanitize
+        if not fname:
+            return None
+
         return hash(fname) % MAX_NODES
     
 
@@ -66,6 +70,8 @@ class ComputeNodeHandler:
     Reach the node responsible for the file
     '''
     def reach_destination(self, key):
+        if not key or key < -1:
+            return None
         # check if the accepted key range
         if self.pred_id < key <= self.node_id:
             return True
@@ -118,6 +124,8 @@ class ComputeNodeHandler:
             return None, None  
     
     def unpack_add(self, add):
+        if not add:
+            return None
         host, port = add
 
         return host, port
@@ -209,7 +217,7 @@ class ComputeNodeHandler:
         client = super.Client(protocol)
         transport.open()
         
-        self.node_id = client.request_join(self.host, self.port)
+        self.node_id = client.request_join(self.port)
 
         # get the node that represents the join position
         node = client.get_node()
@@ -219,8 +227,8 @@ class ComputeNodeHandler:
             return
         
         # make connection with join position node
-        host, port = self.unpack_add(node)
-        client2, transport2 = self.connect_to_node(host, port)
+        # host, port = self.unpack_add(node)
+        client2, transport2 = self.connect_to_node(node.ip, node.port)
         if client2 and transport2:
             try:
                 # set internal values to join
@@ -269,5 +277,8 @@ def main():
     server.serve()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Thrift.TException as tx:
+        print('%s' % tx.message)
 

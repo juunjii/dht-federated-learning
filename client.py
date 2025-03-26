@@ -21,7 +21,7 @@ from super import super
 def main():
     
     # Make socket
-    transport = TSocket.TSocket('127.0.0.1', 9091)
+    transport = TSocket.TSocket('localhost', 9090)
     transport = TTransport.TBufferedTransport(transport)
     protocol = TBinaryProtocol.TBinaryProtocol(transport)
 
@@ -65,7 +65,7 @@ def main():
         print(f"Thrift Exception: {tx.message}")
 
 
-if name__ == '__main__':
+if __name__ == '__main__':
     try:
         main()
     except Thrift.TException as tx:
