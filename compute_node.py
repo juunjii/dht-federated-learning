@@ -48,19 +48,26 @@ class ComputeNodeHandler:
         self.supernode_host = supernode_host
         self.supernode_port = supernode_port
 
+        #model stored info
+        self.weights = {}
+
 
     '''
     Hash fname to numerical key value
     '''
     def hash_filename(self, fname):
-        pass
+        return
     
 
     '''
     Reach the node responsible for the file
     '''
-    def reach_destination(self, fname):
-        pass
+    def reach_destination(self, key):
+        if self.pred_id < key <= self.node_id:
+            return True
+        if self.node_id < self.pred_id and (key > self.pred_id or key <= self.node_id):
+            return True
+        return False
 
 
     '''
@@ -69,14 +76,20 @@ class ComputeNodeHandler:
     Should return addrress of node to allow for recursive calls 
     '''
     def forward_data(self, key):
-        pass
+        for i in range(len(self.finger_ids) - 1, -1, -1):
+            if self.finger_ids[i] is not None and self.pred_id < self.finger_ids[i] < key:
+                return self.finger_table[i]
+        return self.succ
     
     ''' 
     Train model when data reaches node;
     Stores trained weights, V and W for later retrieval
     '''
     def train(self, fname):
-        pass
+        model = mlp()
+        if model.init_training_random(fname, _k=26, _h=20):
+            V, W = model.get_weights()
+            self.weights[fname] = WeightMatrices(V=V.tolist(), W=W.tolist())
 
     '''
     Connect to another node in the network
@@ -128,5 +141,30 @@ class ComputeNodeHandler:
                 # Ensures that connection would be closed
                 finally: 
                     transport.close() 
+
+    def get_model(self, fname):
+        '''return a model from a node from an input dataset (filename)'''
+        key = self.hash_filename(fname)
+
+        if self.reach_destination(key):
+            if fname in self.weights:
+                return self.weights[fname]
+            if fname in self.work:
+                return 'wait'
+            return '404'
+        
+        node = self.forward_data(key)
+        print(f"Node {self.node_id} forwarding file {fname} to node at {node}")
+
+        host, port = self.unpack_add(node)
+        client, transport = self.connect_to_node(host, port)
+
+        if client and transport:
+            try:
+                client.put_data(fname)  
+            # Ensures that connection would be closed
+            finally: 
+                transport.close() 
+            
             
 
