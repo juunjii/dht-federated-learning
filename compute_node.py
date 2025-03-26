@@ -125,7 +125,7 @@ class ComputeNodeHandler:
 
             # Add to work set
             self.work.add(fname)
-            Thread(target=self.train, args=(fname)).start()
+            Thread(target=self.train, args=(fname,)).start()
         # Continue forwarding 
         else:
             # Return address of node (self.add = (host, port)
@@ -184,6 +184,32 @@ class ComputeNodeHandler:
                 client.fix_fingers()
             finally:
                 transport.close()
+    
+    def node_join(self):
+        transport = TSocket.TSocket(self.supernode_host, self.supernode_port)
+        transport = TTransport.TBufferedTransport(transport)
+        protocol = TBinaryProtocol.TBinaryProtocol(transport)
+        client = super.Client(protocol)
+        transport.open()
+        
+        self.node_id = client.request_join(self.host, self.port)
+        node = client.get_node()
+        
+        if not node:
+            transport.close()
+            return
+        
+        host, port = self.unpack_add(node)
+        client2, transport2 = self.connect_to_node(host, port)
+        if client2 and transport2:
+            try:
+                self.succ = client2.get_successor()
+                self.pred = client2.get_predecessor()
+                self.fix_fingers()
+                client.confirm_join(self.node_id)
+            finally:
+                transport2.close()
+        transport.close()
 
     def print_info(self):
         '''prints node info'''
