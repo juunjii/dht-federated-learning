@@ -38,8 +38,8 @@ class ComputeNodeHandler:
         self.pred_id = None
         self.succ = None
         self.succ_id = None
-        self.finger_table = [None] * int(ceil(log2(MAX_NODES))) + 1
-        self.finger_ids = [None] * int(ceil(log2(MAX_NODES))) + 1
+        self.finger_table = [None] * (int(ceil(log2(MAX_NODES))) + 1)
+        self.finger_ids = [None] * (int(ceil(log2(MAX_NODES))) + 1)
 
         # Tracks current files used for training
         self.work= set()
@@ -50,6 +50,8 @@ class ComputeNodeHandler:
 
         #model stored info
         self.weights = {}
+
+        self.node_join()
 
 
     '''
@@ -237,3 +239,26 @@ class ComputeNodeHandler:
         print("Files: ")
         for file in self.weights.keys():
             print(file, ", ")
+
+def main():
+    if len(sys.argv) != 3:
+        print("Usage: python3 compute_node.py <host> <port>")
+        sys.exit(1)
+
+    host= sys.argv[1]
+    port = int(sys.argv[2])
+
+    handler = ComputeNodeHandler(host, port)
+    processor = compute.Processor(handler)
+    transport = TSocket.TServerSocket(host=host, port=port)
+    tfactory = TTransport.TBufferedTransportFactory()
+    pfactory = TBinaryProtocol.TBinaryProtocolFactory()
+
+    server = TServer.TThreadedServer(processor, transport, tfactory, pfactory)
+
+    print(f"Starting Compute Node on host {host} and port {port}...")
+    server.serve()
+
+if __name__ == "__main__":
+    main()
+
