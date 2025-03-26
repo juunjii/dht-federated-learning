@@ -50,18 +50,30 @@ class ComputeNodeHandler:
 
 
     '''
-    Hash fname to numerical key value
+    Hash fname to numerical key value 
+    Key value: 0 - (MAX_NODES -1)
     '''
     def hash_filename(self, fname):
-        pass
+        return hash(fname) % MAX_NODES
     
+    '''
+    Using the ID of their predecessor, nodes will accept keys with values 
+    greater than their predecessor’s ID and less than or equal to their own ID
+    '''
+    def check_accept_keys(self, key, pred_id, node_id):
+        return pred_id < key <= node_id
 
     '''
     Reach the node responsible for the file
     '''
-    def reach_destination(self, fname):
-        pass
+    def reach_destination(self, key):
+        # Single node in network (no predecessors)
+        if self.pred_id == self.node_id:
+            return True
 
+        return self.check_accept_keys(key, self.pred_id, self.node_id)
+
+    
 
     '''
     Forward the data to appropriate node 
@@ -93,6 +105,9 @@ class ComputeNodeHandler:
             print(f"Failed to connect to node {host}:{port} - {e}")
             return None, None  
     
+    '''
+    Unpack the tuple - self.add = (host, port)
+    '''
     def unpack_add(self, add):
         host, port = add
 
@@ -103,7 +118,7 @@ class ComputeNodeHandler:
     Recursively finds the destination node
     '''
     def put_data(self, fname):
-        # Hash fname to numerical key value
+        # Hash fname to numerical key value (0 - MAX_NODES -1)
         key = self.hash_filename(fname)
         
         # Reach destination node
