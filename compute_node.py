@@ -54,6 +54,10 @@ class ComputeNodeHandler:
     Key value: 0 - (MAX_NODES -1)
     '''
     def hash_filename(self, fname):
+        # Sanitize
+        if not fname:
+            return None
+
         return hash(fname) % MAX_NODES
     
     '''
@@ -61,12 +65,34 @@ class ComputeNodeHandler:
     greater than their predecessor’s ID and less than or equal to their own ID
     '''
     def check_accept_keys(self, key, pred_id, node_id):
+        # Sanitize
+        if not key or key < -1:
+            return None
+
         return pred_id < key <= node_id
+
+
+    '''
+    Find the node responsible for a key
+    
+    '''
+    def check_closest_succ(self, key, node_id, succ_id):
+        # Sanitize
+        if not key or key < -1:
+            return None
+
+        return node_id < key <= succ_id
+
+
 
     '''
     Reach the node responsible for the file
     '''
     def reach_destination(self, key):
+        # Sanitize
+        if not key or key < -1:
+            return None
+         
         # Single node in network (no predecessors)
         if self.pred_id == self.node_id:
             return True
@@ -76,11 +102,17 @@ class ComputeNodeHandler:
     
 
     '''
-    Forward the data to appropriate node 
+    Forward the data to next node until appropriate node is found 
 
-    Should return addrress of node to allow for recursive calls 
+    Should return addrress - (host, port) of node to allow for recursive calls 
     '''
     def forward_data(self, key):
+        # Forward to closest successor node 
+        if self.check_closest_succ(key, self.node_id, self.succ_id):
+            return self.succ
+        
+        
+
         pass
     
     ''' 
@@ -109,6 +141,10 @@ class ComputeNodeHandler:
     Unpack the tuple - self.add = (host, port)
     '''
     def unpack_add(self, add):
+        # Sanitize
+        if not add:
+            return None
+
         host, port = add
 
         return host, port
@@ -127,6 +163,7 @@ class ComputeNodeHandler:
 
             # Add to work set
             self.work.add(fname)
+            # Start training
             Thread(target=self.train, args=(fname)).start()
         # Continue forwarding 
         else:
