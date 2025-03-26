@@ -150,7 +150,9 @@ class ComputeNodeHandler:
             if fname in self.weights:
                 return self.weights[fname]
             if fname in self.work:
+                # must wait for completion
                 return 'wait'
+            #  not found
             return '404'
         
         node = self.forward_data(key)
@@ -161,7 +163,7 @@ class ComputeNodeHandler:
 
         if client and transport:
             try:
-                client.put_data(fname)  
+                client.get_model(fname)  
             # Ensures that connection would be closed
             finally: 
                 transport.close() 
@@ -169,10 +171,12 @@ class ComputeNodeHandler:
     def fix_fingers(self):
         '''Makes a node fix its finger table'''
         for i in range(len(self.finger_table)):
+            # calculate key, update finger table and ids
             key = (self.node_id + 2**i) % MAX_NODES
             self.finger_ids[i] = key
             self.finger_table[i] = self.forward_data(key)
-            
+        
+        # no successor
         if not self.succ:
             return
 
@@ -186,6 +190,8 @@ class ComputeNodeHandler:
                 transport.close()
     
     def node_join(self):
+        '''compute node joins the network'''
+        # setup connection with supernode
         transport = TSocket.TSocket(self.supernode_host, self.supernode_port)
         transport = TTransport.TBufferedTransport(transport)
         protocol = TBinaryProtocol.TBinaryProtocol(transport)
@@ -193,16 +199,20 @@ class ComputeNodeHandler:
         transport.open()
         
         self.node_id = client.request_join(self.host, self.port)
+
+        # get the node that represents the join position
         node = client.get_node()
-        
+
         if not node:
             transport.close()
             return
         
+        # make connection with join position node
         host, port = self.unpack_add(node)
         client2, transport2 = self.connect_to_node(host, port)
         if client2 and transport2:
             try:
+                # set internal values to join
                 self.succ = client2.get_successor()
                 self.pred = client2.get_predecessor()
                 self.fix_fingers()
