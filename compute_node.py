@@ -166,5 +166,23 @@ class ComputeNodeHandler:
             finally: 
                 transport.close() 
             
+    def fix_fingers(self):
+        '''Makes a node fix its finger table'''
+        for i in range(len(self.finger_table)):
+            key = (self.node_id + 2**i) % MAX_NODES
+            self.finger_ids[i] = key
+            self.finger_table[i] = self.forward_data(key)
             
+        if not self.succ:
+            return
 
+        host, port = self.unpack_add(self.succ)
+        client, transport = self.connect_to_node(host, port)
+        
+        if client and transport:
+            try:
+                client.fix_fingers()
+            finally:
+                transport.close()
+
+    
