@@ -185,4 +185,19 @@ class ComputeNodeHandler:
             finally:
                 transport.close()
 
-    
+    def print_info(self):
+        '''prints node info'''
+        
+        print("Network connection info")
+        print("Predecessor: ", self.pred)
+        print("Successor: ", self.succ)
+        print("Finger Table:")
+        print("i", "Node", "ID")
+        for i in range(len(self.finger_table)):
+            print(i, self.finger_table[i], self.finger_ids[i])
+            
+        print("Hashing info")
+        print("Node ID: ", self.node_id)
+        print("Files: ")
+        for file in self.weights.keys():
+            print(file, ", ")
