@@ -56,19 +56,28 @@ class ComputeNodeHandler:
 
     '''
     Hash fname to numerical key value
+    Key value: 0 - (MAX_NODES -1)
     '''
     def hash_filename(self, fname):
-        return
+        return hash(fname) % MAX_NODES
     
 
     '''
     Reach the node responsible for the file
     '''
     def reach_destination(self, key):
+        # check if the accepted key range
         if self.pred_id < key <= self.node_id:
             return True
+        
+        # this is the case where part of the key range is reset back to 0
         if self.node_id < self.pred_id and (key > self.pred_id or key <= self.node_id):
             return True
+        
+        # Single node in network (no predecessors)
+        if self.pred_id == self.node_id:
+            return True
+        
         return False
 
 
