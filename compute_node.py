@@ -38,8 +38,8 @@ class ComputeNodeHandler:
         self.pred_id = None
         self.succ = None
         self.succ_id = None
-        self.finger_table = [None] * int(ceil(log2(MAX_NODES))) + 1
-        self.finger_ids = [None] * int(ceil(log2(MAX_NODES))) + 1
+        self.finger_table = [None] * int(ceil(log2(MAX_NODES))) 
+        self.finger_ids = [None] * int(ceil(log2(MAX_NODES)))
 
         # Tracks current files used for training
         self.work= set()
@@ -64,25 +64,15 @@ class ComputeNodeHandler:
     Using the ID of their predecessor, nodes will accept keys with values 
     greater than their predecessor’s ID and less than or equal to their own ID
     '''
-    def check_accept_keys(self, key, pred_id, node_id):
+    def is_between(self, key, id1, id2):
         # Sanitize
         if not key or key < -1:
             return None
-
-        return pred_id < key <= node_id
-
-
-    '''
-    Find the node responsible for a key
-    
-    '''
-    def check_closest_succ(self, key, node_id, succ_id):
-        # Sanitize
-        if not key or key < -1:
-            return None
-
-        return node_id < key <= succ_id
-
+        
+        if id1 < id2:
+            return id1 < key <= id2
+        else: # Wrap around when range crosses (MAX_NODES -1)
+            return id1 < key <= MAX_NODES-1 or 0 <= key <= id2
 
 
     '''
@@ -97,9 +87,23 @@ class ComputeNodeHandler:
         if self.pred_id == self.node_id:
             return True
 
-        return self.check_accept_keys(key, self.pred_id, self.node_id)
+        return self.is_between(key, self.pred_id, self.node_id)
 
-    
+    '''
+    Get closest finger preceding ID
+    '''
+    def get_closest_finger_entry(self, key):
+        
+        # Total entries
+        n = int(ceil(log2(MAX_NODES))) 
+        
+        for i in range(n, 0, -1):
+            # Forward to FT[i] <=k and FT[i+1] > k
+            if self.finger_table[i] and self.is_between(self.finger_ids[i], self.node_id, key):
+                return self.finger_table[i] # (host, port) of node
+        
+        # Return own successor
+        return self.addr
 
     '''
     Forward the data to next node until appropriate node is found 
@@ -107,13 +111,16 @@ class ComputeNodeHandler:
     Should return addrress - (host, port) of node to allow for recursive calls 
     '''
     def forward_data(self, key):
-        # Forward to closest successor node 
-        if self.check_closest_succ(key, self.node_id, self.succ_id):
+        # Forward to closest successor node (node_id < key <= succ_id) in finger table
+        if self.is_between(key, self.node_id, self.succ_id):
             return self.succ
         
+        closest_succ = self.get_closest_finger_entry(key)
+        if closest_succ == self.addr: 
+            return self.successor
         
-
-        pass
+        return closest_succ
+        
     
     ''' 
     Train model when data reaches node;
