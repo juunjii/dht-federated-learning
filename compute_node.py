@@ -62,7 +62,23 @@ class ComputeNodeHandler:
         except Exception as e:
             print(f"Failed to connect to node {self.supernode_host}:{self.supernode_port} - {e}")
             return None, None  
+    
+    '''
+    Find the successor for specified node
+    '''
+    def find_successor(self, node_id):
+        # If node id is between own node id and successor id 
+        if self.is_between(node_id, self.node_id, self.succ_id):
+            return self.succ_id
         
+        # Find the closest preceding node
+        closest = self.get_closest_finger_entry(node_id)
+        
+        # No better routing option available 
+        if closest == self.addr:
+            return self.succ_id
+        
+
     '''
     Nodes join the network, they will need to contact  the supernode, initialize their own 
     predecessors, successors, and finger tables, and update existing nodes in the network.  
@@ -82,12 +98,12 @@ class ComputeNodeHandler:
                 # Empty network
                 if conn_ip == None or conn_port == None:
                     # Initialize successor as self
-                    self.successor = self.addr
-                    self.successor_id = self.node_id
+                    self.succ = self.addr
+                    self.succ_id = self.node_id
                     
                     # Initialize predecessor as self
-                    self.predecessor = self.addr
-                    self.predecessor_id = self.node_id
+                    self.pred = self.addr
+                    self.pred_id = self.node_id
                     
                     # Initialize finger table to point to self
                     for i in range(len(self.finger_table)):
@@ -99,14 +115,14 @@ class ComputeNodeHandler:
                     client, transport = self.connect_to_node(conn_ip, conn_port)
                     if client and transport:
                         try:
-                            # Find successor for node 
-                            
+                            # Find successor for new node 
+                            succ_id = client.find_succesor(self.node_id)
 
                             # Update own finger table 
                             self.update_finger_table(client)
 
                             # Update other finger table 
-                            self.update_other_finger_table()
+                            self.update_other_finger_tables()
 
                             # Set predecessor
 
@@ -126,7 +142,7 @@ class ComputeNodeHandler:
     def update_finger_table(self, node):
         pass
 
-    def update_other_finger_table(self):
+    def update_other_finger_tables(self):
         pass
 
     '''
@@ -177,12 +193,14 @@ class ComputeNodeHandler:
         # Total entries
         n = int(ceil(log2(MAX_NODES))) 
         
+        # Ensure lookup is faster by starting from bottom entries
         for i in range(n, 0, -1):
-            # Forward to FT[i] <=k and FT[i+1] > k
+            # Valid forward if FT[i] <=k and FT[i+1] > k
+            # If the i-th finger table entry falls in the interval (self.node_id, key]
             if self.finger_table[i] and self.is_between(self.finger_ids[i], self.node_id, key):
                 return self.finger_table[i] # (host, port) of node
         
-        # Return own successor
+        # No suitable entry found, return own successor
         return self.addr
 
     '''
