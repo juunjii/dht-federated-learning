@@ -26,7 +26,7 @@ MAX_NODES = 10
 
 
 class ComputeNodeHandler:
-    def __init__(self, host, port, supernode_host='localhost', supernode_port=9090):
+    def __init__(self, host, port, supernode_host='localhost', supernode_port=9091):
         # Connection information to other nodes in network
         self.host = host
         self.port = port
@@ -548,36 +548,6 @@ class ComputeNodeHandler:
                 finally: 
                     transport.close() 
     
-    def print_info(self):
-        """Print information about the node state"""
-        info = f"Node {self.node_id} Info:\n"
-        info += f"Address: {self.addr}\n"
-        info += f"Predecessor: {self.pred_id} at {self.pred}\n"
-        info += f"Successor: {self.succ_id} at {self.succ}\n"
-        
-        info += "Finger Table:\n"
-        for i, (addr, node_id) in enumerate(zip(self.finger_table, self.finger_ids)):
-            if addr:
-                info += f"  [{i}]: Node {node_id} at {addr}\n"
-        
-        info += f"Responsible for keys: {self._get_responsible_key_range()}\n"
-        
-        info += "Stored Files:\n"
-        for filename, model in self.models.items():
-            info += f"  {filename}: {model['status']}\n"
-        
-        info += "Training Files:\n"
-        for filename in self.work:
-            info += f"  {filename}\n"
-        
-        info += "Data Paths:\n"
-        for filename, path in self.data_path.items():
-            info += f"  {filename}: {path}\n"
-        
-        return info
-
-
-
     '''
     Connect to another node in the network
     '''
@@ -642,5 +612,72 @@ class ComputeNodeHandler:
                 # Ensures that connection would be closed
                 finally: 
                     transport.close() 
-            
 
+    def get_responsible_key_range(self):
+        """Get the range of keys this node is responsible for"""
+        if self.predecessor_id is None:
+            return f"[0-{MAX_NODES-1}]"
+            
+        # Keys from (predecessor, self]
+        if self.predecessor_id < self.node_id:
+            return f"({self.predecessor_id}-{self.node_id}]"
+        else:  # Wrapping around
+            return f"({self.predecessor_id}-{MAX_NODES-1}] and [0-{self.node_id}]"
+            
+    def print_info(self):
+        """Print information about the node state"""
+        info = f"Node {self.node_id} Info:\n"
+        info += f"Address: {self.addr}\n"
+        info += f"Predecessor: {self.pred_id} at {self.pred}\n"
+        info += f"Successor: {self.succ_id} at {self.succ}\n"
+        
+        info += "Finger Table:\n"
+        for i, (addr, node_id) in enumerate(zip(self.finger_table, self.finger_ids)):
+            if addr:
+                info += f"  [{i}]: Node {node_id} at {addr}\n"
+        
+        info += f"Responsible for keys: {self.get_responsible_key_range()}\n"
+        
+        info += "Stored Files:\n"
+        for filename, model in self.models.items():
+            info += f"  {filename}: {model['status']}\n"
+        
+        info += "Training Files:\n"
+        for filename in self.work:
+            info += f"  {filename}\n"
+        
+        info += "Data Paths:\n"
+        for filename, path in self.data_path.items():
+            info += f"  {filename}: {path}\n"
+        
+        return info
+
+    # Set up the server
+if __name__ == '__main__':
+    if len(sys.argv) < 3:
+        print("Usage: python compute_node.py <port> <supernode_port>")
+        sys.exit(1)
+    
+    port = int(sys.argv[1])
+    supernode_port = int(sys.argv[2])
+    
+    # Create handler
+    handler = ComputeNodeHandler('localhost', port, supernode_port=supernode_port)
+    
+    # Initialize node by joining the network
+    handler.node_join()
+    
+    # Start server
+    processor = compute.Processor(handler)
+    transport = TSocket.TServerSocket(host='localhost', port=port)
+    tfactory = TTransport.TBufferedTransportFactory()
+    pfactory = TBinaryProtocol.TBinaryProtocolFactory()
+    
+    # Create a threaded server
+    server = TServer.TThreadedServer(processor, transport, tfactory, pfactory)
+    
+    print(f"Starting compute node {handler.node_id} on port {port}...")
+    try:
+        server.serve()
+    except KeyboardInterrupt:
+        print("Node shutting down")
