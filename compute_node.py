@@ -34,9 +34,9 @@ class ComputeNodeHandler:
         self.node_id = None
 
         # Finger table variables
-        self.pred = None
+        self.pred = None # tuple 
         self.pred_id = None
-        self.succ = None
+        self.succ = None # tuple
         self.succ_id = None
         self.finger_table = [None] * int(ceil(log2(MAX_NODES))) 
         self.finger_ids = [None] * int(ceil(log2(MAX_NODES)))
@@ -77,7 +77,49 @@ class ComputeNodeHandler:
         # No better routing option available 
         if closest == self.addr:
             return self.succ_id
+    
+    '''
+    Get current node's predecessor
+    '''
+    def get_predecessor(self):
+        return self.pred
+    
+    '''
+    Get corresponding address (host, port) of node by querying the network
+    '''
+    def get_node_addreess(self, node_id):
+        if node_id == self.node_id:
+            return self.addr
+            
+        # If it's our successor
+        if node_id == self.succ_id:
+            return self.succ
+            
+        # If it's our predecessor
+        if node_id == self.pred_id:
+            return self.pred
+            
+        # Check finger table
+        for i, id in enumerate(self.finger_ids):
+            if id == node_id:
+                return self.finger_table[i]
         
+        # Query the network to get successor info
+        succ_id = self.find_successor(node_id)
+
+        # Found node 
+        if succ_id == node_id:
+            succ_ip, succ_port = self.unpack_add(self.succ)
+            
+            client, transport = self.connect_to_node(succ_ip, succ_port)
+            if client and transport:
+                try:
+                    return client.get_predecessor()
+                # Ensures that connection would be closed
+                finally: 
+                    transport.close() 
+        
+        return self.successor  
 
     '''
     Nodes join the network, they will need to contact  the supernode, initialize their own 
@@ -116,12 +158,21 @@ class ComputeNodeHandler:
                     if client and transport:
                         try:
                             # Find successor for new node 
-                            succ_id = client.find_succesor(self.node_id)
+                            succ_id = client.find_successor(self.node_id)
+                            succ_add = self.get_node_addreess(succ_id)
+
+                            # Update successor
+                            self.succ_id = succ_id
+                            self.succ = succ_add
+
+                            # Update finger table with successor (1st entry)
+                            self.finger_ids[0] = succ_id
+                            self.finger_table[0] = succ_add
 
                             # Update own finger table 
                             self.update_finger_table(client)
 
-                            # Update other finger table 
+                            # Update other finger tables
                             self.update_other_finger_tables()
 
                             # Set predecessor
