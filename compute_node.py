@@ -437,7 +437,7 @@ class ComputeNodeHandler:
     
     ''' 
     Train model when data reaches node;
-    Stores trained weights, V and W for later retrieval
+    Stores trained weights, V and W, and status for client retrieval
     '''
     def train(self, fname):
         try:
@@ -475,6 +475,50 @@ class ComputeNodeHandler:
             print(f"Exception in training thread: {e}")
             if fname in self.work:
                 self.work.remove(fname)
+
+
+    '''
+    Returns a model from a node from an input dataset (filename)
+    '''
+    def get_model(self, fname):
+        # Filename hashed to key value
+        key = self.hash_filename(fname)
+
+        # Checks if current node is responsible for file
+        if self.reach_destination(key):
+            if f in self.models:
+                model = self.models[f]
+
+                if model['status'] == 'ready':
+                    # Convert numpy arrays to list
+                    V = model['V'].tolist()
+                    W = model['W'].tolist()
+
+                    return WeightMatrices(V=V, W=W, status = 'ready')
+                else:
+                    return WeightMatrices(V=[[]], W=[[]], status = 'wait')
+                
+            else:
+                return WeightMatrices(V=[[]], W=[[]], status = 'not found')
+        # Not responsible for file, forward to another node
+        else:
+            node = self.forward_data(key)
+
+            host, port = self.unpack_add(node)
+            
+            client, transport = self.connect_to_node(host, port)
+            if client and transport:
+                try:
+                   return client.get_model(fname) 
+                # Ensures that connection would be closed
+                finally: 
+                    transport.close() 
+            
+
+
+
+
+
 
     '''
     Connect to another node in the network
