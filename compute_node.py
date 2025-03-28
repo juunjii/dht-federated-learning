@@ -50,6 +50,9 @@ class ComputeNodeHandler:
         # Supernode information (for joining)
         self.supernode_host = supernode_host
         self.supernode_port = supernode_port
+
+        # For tracking the path of data through the network (for debugging)
+        self.data_path = {}
     
     '''
     Connect to another node in the network
@@ -134,6 +137,23 @@ class ComputeNodeHandler:
                     transport.close() 
         
         return self.successor  
+    
+    '''
+    Successor correctly updates its predecessor reference when new node joins network
+    '''
+    def update_predecessor(self, node_id, address):
+            # Sanitize
+            if not node_id or not address:
+                return -1
+            
+            # Check if pred_id < node_id <= current node id
+            between =  self.is_between(node_id, self.predecessor_id, self.node_id)
+
+            if (self.predecessor is None or between):
+                self.predecessor = address
+                self.predecessor_id = node_id
+
+
 
     '''
     Nodes join the network, they will need to contact  the supernode, initialize their own 
@@ -189,8 +209,22 @@ class ComputeNodeHandler:
                             # Update other finger tables
                             self.update_other_finger_tables()
 
-                            # Set predecessor
+                            # Set predecessor of new node
+                            # New node asks its successor for its predecessor and updates its own predecessor record
+                            ip, port = self.unpack_add(succ_add)
+                            client, transport = self.connect_to_node(ip, port)
+                            if client and transport:
+                                try:
+                                    # Get sucessor's predecessor
+                                    self.pred = client.get_predecessor()
+                                    self.pred_id = self.get_node_id(self.pred)
 
+                                    # Successor updates predecessor to be newly joined node 
+                                    client.update_predecessor(self.node_id, self.addr)
+
+                                # Ensures that connection would be closed
+                                finally: 
+                                    transport.close() 
 
 
                         # Ensures that connection would be closed
@@ -505,7 +539,7 @@ class ComputeNodeHandler:
             node = self.forward_data(key)
 
             host, port = self.unpack_add(node)
-            
+
             client, transport = self.connect_to_node(host, port)
             if client and transport:
                 try:
@@ -513,10 +547,34 @@ class ComputeNodeHandler:
                 # Ensures that connection would be closed
                 finally: 
                     transport.close() 
-            
-
-
-
+    
+    def print_info(self):
+        """Print information about the node state"""
+        info = f"Node {self.node_id} Info:\n"
+        info += f"Address: {self.addr}\n"
+        info += f"Predecessor: {self.pred_id} at {self.pred}\n"
+        info += f"Successor: {self.succ_id} at {self.succ}\n"
+        
+        info += "Finger Table:\n"
+        for i, (addr, node_id) in enumerate(zip(self.finger_table, self.finger_ids)):
+            if addr:
+                info += f"  [{i}]: Node {node_id} at {addr}\n"
+        
+        info += f"Responsible for keys: {self._get_responsible_key_range()}\n"
+        
+        info += "Stored Files:\n"
+        for filename, model in self.models.items():
+            info += f"  {filename}: {model['status']}\n"
+        
+        info += "Training Files:\n"
+        for filename in self.work:
+            info += f"  {filename}\n"
+        
+        info += "Data Paths:\n"
+        for filename, path in self.data_path.items():
+            info += f"  {filename}: {path}\n"
+        
+        return info
 
 
 
@@ -552,6 +610,12 @@ class ComputeNodeHandler:
     Recursively finds the destination node
     '''
     def put_data(self, fname):
+
+        # Record the data path for debugging
+        if fname not in self.data_path:
+            self.data_path[fname] = []
+        self.data_path[fname].append(self.node_id)
+
         # Hash fname to numerical key value (0 - MAX_NODES -1)
         key = self.hash_filename(fname)
         
