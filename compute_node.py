@@ -67,6 +67,9 @@ class ComputeNodeHandler:
     Find the successor for specified node
     '''
     def find_successor(self, node_id):
+        if not node_id:
+            return -1
+
         # If node id is between own node id and successor id 
         if self.is_between(node_id, self.node_id, self.succ_id):
             return self.succ_id
@@ -85,17 +88,25 @@ class ComputeNodeHandler:
         return self.pred
     
     '''
+    Return current node's id
+    '''
+    def get_id(self):
+        return self.node_id
+    
+    
+    '''
     Get corresponding address (host, port) of node by querying the network
     '''
     def get_node_addreess(self, node_id):
+        if not node_id:
+            return -1
+
         if node_id == self.node_id:
             return self.addr
             
-        # If it's our successor
         if node_id == self.succ_id:
             return self.succ
             
-        # If it's our predecessor
         if node_id == self.pred_id:
             return self.pred
             
@@ -194,6 +205,9 @@ class ComputeNodeHandler:
     Update finger table of connection point 
     '''
     def update_finger_table(self, node):
+        if not node:
+            return -1
+
         # Number of entries
         n = int(ceil(log2(MAX_NODES)))
 
@@ -211,10 +225,115 @@ class ComputeNodeHandler:
                 succ_add = self.get_node_addreess(succ_id)
                 self.finger_ids[i] = succ_id
                 self.finger_table[i] = succ_add
-            
 
-    def update_other_finger_tables(self):
+    '''
+    Given node address, return the respective node id
+    '''
+    def get_node_id(self, address):
+        if address == self.addr:
+            return self.node_id
+            
+        if address == self.successor:
+            return self.successor_id
+            
+        if address == self.predecessor:
+            return self.predecessor_id
+            
+        # Check finger table
+        for i, addr in enumerate(self.finger_table):
+            if addr == address:
+                return self.finger_ids[i]
+        
+        # Address not in finger table 
+        # Query the network to get node id
+        try:
+            ip, port = self.unpack_add(address)
+            
+            client, transport = self.connect_to_node(ip, port)
+            if client and transport:
+                try:
+                    return client.get_id()
+                # Ensures that connection would be closed
+                finally: 
+                    transport.close() 
+        except:
+            print(f"Error: Failed to find node id for address - {address}")
+            return -1
+
+
+    '''
+    Find corresponing predecessor for given node in network
+    '''
+    def find_predecessor(self, node_id):
+        # Sanitize
+        if not node_id:
+            return -1
+        
+        # One node in network
+        if self.succ_id == self.node_id:
+            return self.addr
+        
+        curr_id = self.node_id
+        curr_addr = self.addr
+
+        closest_entry = self.get_closest_finger_entry(node_id)
+        
+        # Continue searching until we find a node where input node is between it and its closest preceding node
+        while not self.is_between(node_id, curr_id, self.get_node_id(closest_entry)):
+            # If we're still at the current node
+            if curr_addr == self.addr:  
+                # Move to the closest preceding finger entry
+                curr_addr = self.get_closest_finger_entry(node_id)
+                curr_id = self.get_node_id(curr_addr)
+            # Connect to the remote node and ask for its closest preceding finger
+            else:
+                ip, port = self.unpack_add(curr_addr)
+                client, transport = self.connect_to_node(ip, port)
+                if client and transport:
+                    try:
+                        closest = client.get_closest_finger_entry(node_id)
+                        # Prevent infinite loop if cannot find suitable node
+                        if closest == curr_addr: 
+                            break
+                        # Move to the newly found closest node
+                        curr_addr = closest
+                        curr_id = self.get_node_id(curr_addr)
+                    # Ensures that connection would be closed
+                    finally: 
+                        transport.close() 
+        
+        return curr_addr
+    
+    def fix_fingers(self):
         pass
+
+            
+    '''
+    Update existing nodes' finger tables in the network 
+    when new node joins network
+    '''
+    def update_other_finger_tables(self):
+        # Number of entries
+        n = int(ceil(log2(MAX_NODES)))
+
+        # Update entries - start from 1 to (MAX_NODES - 1)
+        for i in range(1, n + 1):
+            # Get previous entry
+            pred = (self.node_id - 2**(i-1)) % MAX_NODES
+
+            # Find the address of predecessor
+            pred_addr = self.find_predecessor(pred)
+            
+            # Update predecessor's finger table (invalid when new node join)
+            if pred_addr != self.addr:  
+                ip, port = self.unpack_add(pred_addr)
+                client, transport = self.connect_to_node(ip, port)
+                if client and transport:
+                    try:
+                       client.fix_fingers()
+                    # Ensures that connection would be closed
+                    finally: 
+                        transport.close() 
 
     '''
     Hash fname to numerical key value 
