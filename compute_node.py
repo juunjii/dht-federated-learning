@@ -47,7 +47,87 @@ class ComputeNodeHandler:
         # Supernode information (for joining)
         self.supernode_host = supernode_host
         self.supernode_port = supernode_port
+    
+    '''
+    Connect to another node in the network
+    '''
+    def connect_to_supernode(self):
+        try:
+            transport = TSocket.TSocket(self.supernode_host, self.supernode_port)
+            transport = TTransport.TBufferedTransport(transport)
+            protocol = TBinaryProtocol.TBinaryProtocol(transport)
+            client = super.Client(protocol)
+            transport.open()
+            return client, transport  
+        except Exception as e:
+            print(f"Failed to connect to node {self.supernode_host}:{self.supernode_port} - {e}")
+            return None, None  
+        
+    '''
+    Nodes join the network, they will need to contact  the supernode, initialize their own 
+    predecessors, successors, and finger tables, and update existing nodes in the network.  
+    '''
+    def node_join(self):
+        client, transport = self.connect_to_supernode()
+        if client and transport:
+            try:
+                self.node_id = super.request_join(self.port)
+                print(f"Node joins with ID: {self.node_id}")
+                
+                connection_point = super.get_node() # Node(ip, port)
+                conn_ip = connection_point.ip
+                conn_port = connection_point.port 
+                print(f"Node joins with connection point: {connection_point.ip, connection_point.port}")
+                
+                # Empty network
+                if conn_ip == None or conn_port == None:
+                    # Initialize successor as self
+                    self.successor = self.addr
+                    self.successor_id = self.node_id
+                    
+                    # Initialize predecessor as self
+                    self.predecessor = self.addr
+                    self.predecessor_id = self.node_id
+                    
+                    # Initialize finger table to point to self
+                    for i in range(len(self.finger_table)):
+                        self.finger_table[i] = self.addr
+                        self.finger_ids[i] = self.node_id
 
+                # Node joins via connection point 
+                else:
+                    client, transport = self.connect_to_node(conn_ip, conn_port)
+                    if client and transport:
+                        try:
+                            # Find successor for node 
+                            
+
+                            # Update own finger table 
+                            self.update_finger_table(client)
+
+                            # Update other finger table 
+                            self.update_other_finger_table()
+
+                            # Set predecessor
+
+
+
+                        # Ensures that connection would be closed
+                        finally: 
+                            transport.close() 
+
+
+
+
+            # Ensures that connection would be closed
+            finally: 
+                transport.close() 
+
+    def update_finger_table(self, node):
+        pass
+
+    def update_other_finger_table(self):
+        pass
 
     '''
     Hash fname to numerical key value 
