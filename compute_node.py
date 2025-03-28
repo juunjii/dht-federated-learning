@@ -190,8 +190,28 @@ class ComputeNodeHandler:
             finally: 
                 transport.close() 
 
+    ''' 
+    Update finger table of connection point 
+    '''
     def update_finger_table(self, node):
-        pass
+        # Number of entries
+        n = int(ceil(log2(MAX_NODES)))
+
+        # Update entries - start from 1 to (MAX_NODES - 1)
+        for i in range(1, n + 1):
+            entry_val = (self.node_id + 2**(i-1)) % MAX_NODES
+
+            # Finger table knows responsible nodes 
+            if self.is_between(entry_val, self.node_id, self.succ_id):
+                self.finger_table[i] = self.succ
+                self.finger_ids[i] = self.succ_id
+            else:
+                # Node find its correct successor
+                succ_id = node.find_successor(entry_val)
+                succ_add = self.get_node_addreess(succ_id)
+                self.finger_ids[i] = succ_id
+                self.finger_table[i] = succ_add
+            
 
     def update_other_finger_tables(self):
         pass
