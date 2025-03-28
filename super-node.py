@@ -40,6 +40,7 @@ class SuperHandler:
 
         # To enforce one node joining network per time
         self.node_joining = None
+        self.node_join_port = {}
 
         self.parse_compute_nodes()
 
@@ -94,6 +95,7 @@ class SuperHandler:
 
         # Tracks current node joining network
         self.node_joining = node_id
+        self.node_join_port[node_id] = port
 
         print(f"Node joining with port {port} assigned ID: {node_id}")
 
@@ -115,21 +117,21 @@ class SuperHandler:
             print(f"Node {node_id} did not join the network")
             return
 
-        port = None
+        port = self.node_join_port[node_id]
         # Get node's port
         # Loop through possible host
-        for valid_port in self.compute_nodes:
-            # No active nodes in network
-            if not self.active_nodes:
-                port = valid_port
-            else: 
-                # Unpack tuple (ip, port)
-                for id, p in self.active_nodes.values():
-                    print(f"p is {p}")
-                    # Ensure that the port is valid
-                    if valid_port != p:
-                        port = valid_port
-                        break
+        # for valid_port in self.compute_nodes:
+        #     # No active nodes in network
+        #     if not self.active_nodes:
+        #         port = valid_port
+        #     else: 
+        #         # Unpack tuple (ip, port)
+        #         for id, p in self.active_nodes.values():
+        #             print(f"p is {p}")
+        #             # Ensure that the port is valid
+        #             if valid_port != p:
+        #                 port = valid_port
+        #                 break
         
         # Wrong port used for node
         if port is None:
@@ -143,7 +145,7 @@ class SuperHandler:
         self.active_nodes[node_id] = (ip, port)
         
         # Clear the current joining node
-        self.current_joining_node = None
+        self.node_joining = None
         
         print(f"Node {node_id} confirmed join with address: {self.active_nodes[node_id]}")
 

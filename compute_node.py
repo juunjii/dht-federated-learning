@@ -120,7 +120,7 @@ class ComputeNodeHandler:
             transport.open()
             return client, transport  
         except Exception as e:
-            print(f"Failed to connect to node {host}:{port} - {e}")
+            print(f"Failed to connect to node (in connect_to_node) {host}:{port} - {e}")
             return None, None  
     
     def unpack_add(self, add):
@@ -218,11 +218,24 @@ class ComputeNodeHandler:
         transport.open()
         
         self.node_id = client.request_join(self.port)
+        if self.node_id == -1:
+            print("Error requesting join from super")
+            return -1
 
         # get the node that represents the join position
         node = client.get_node()
 
         if not node:
+            transport.close()
+            return
+        
+        if node.ip == None:
+            print("First node in network")
+            self.pred = (self.host, self.port)
+            self.succ = (self.host, self.port)
+            self.pred_id = self.node_id
+            self.succ_id = self.node_id
+            client.confirm_join(self.node_id)
             transport.close()
             return
         
@@ -232,6 +245,7 @@ class ComputeNodeHandler:
         if client2 and transport2:
             try:
                 # set internal values to join
+                # TODO: Figure out what the error with getpred/succ is, add code to set pred_id and succ_id
                 self.succ = client2.get_successor()
                 self.pred = client2.get_predecessor()
                 self.fix_fingers()
@@ -256,6 +270,14 @@ class ComputeNodeHandler:
         print("Files: ")
         for file in self.weights.keys():
             print(file, ", ")
+    
+def get_successor(self):
+    """Returns the successor node"""
+    return self.succ
+
+def get_predecessor(self):
+    """Returns the predecessor node"""
+    return self.pred
 
 def main():
     if len(sys.argv) != 3:
