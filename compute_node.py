@@ -305,7 +305,29 @@ class ComputeNodeHandler:
         return curr_addr
     
     def fix_fingers(self):
-        pass
+        n = int(ceil(log2(MAX_NODES)))
+
+        for i in range(1, n + 1):
+            e = (self.node_id + 2**(i - 1)) % MAX_NODES
+
+            # Get successor info
+            succ_id = self.find_successor(e)
+            succ_add = self.get_node_addreess(succ_id)
+
+            # Update finger table with successor
+            self.finger_table[i] = succ_add
+            self.finger_ids[i] = succ_id
+
+            # Recursively fix finger tables by contacting successor
+            if self.succ != self.addr:
+                ip, port = self.unpack_add(self.succ)
+                client, transport = self.connect_to_node(ip, port)
+                if client and transport:
+                    try:
+                        client.fix_fingers()
+                    # Ensures that connection would be closed
+                    finally: 
+                        transport.close() 
 
             
     '''
