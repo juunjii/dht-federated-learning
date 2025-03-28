@@ -2,6 +2,7 @@
 struct WeightMatrices {
     1: list<list<double>> V,
     2: list<list<double>> W
+    3: string status
 }
 
 service compute {

@@ -21,13 +21,15 @@ class WeightMatrices(object):
     Attributes:
      - V
      - W
+     - status
 
     """
 
 
-    def __init__(self, V=None, W=None,):
+    def __init__(self, V=None, W=None, status=None,):
         self.V = V
         self.W = W
+        self.status = status
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -68,6 +70,11 @@ class WeightMatrices(object):
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.STRING:
+                    self.status = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -98,6 +105,10 @@ class WeightMatrices(object):
                 oprot.writeListEnd()
             oprot.writeListEnd()
             oprot.writeFieldEnd()
+        if self.status is not None:
+            oprot.writeFieldBegin('status', TType.STRING, 3)
+            oprot.writeString(self.status.encode('utf-8') if sys.version_info[0] == 2 else self.status)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -119,6 +130,7 @@ WeightMatrices.thrift_spec = (
     None,  # 0
     (1, TType.LIST, 'V', (TType.LIST, (TType.DOUBLE, None, False), False), None, ),  # 1
     (2, TType.LIST, 'W', (TType.LIST, (TType.DOUBLE, None, False), False), None, ),  # 2
+    (3, TType.STRING, 'status', 'UTF8', None, ),  # 3
 )
 fix_spec(all_structs)
 del all_structs

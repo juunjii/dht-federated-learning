@@ -44,6 +44,9 @@ class ComputeNodeHandler:
         # Tracks current files used for training
         self.work= set()
 
+        # Stores local models for client query
+        self.models = {}
+
         # Supernode information (for joining)
         self.supernode_host = supernode_host
         self.supernode_port = supernode_port
@@ -437,7 +440,41 @@ class ComputeNodeHandler:
     Stores trained weights, V and W for later retrieval
     '''
     def train(self, fname):
-        pass
+        try:
+            model = mlp()
+
+             # Initialize model before training
+            initialized_model = model.init_training_model(fname, _k = 26, _h =20)
+            if (initialized_model == False):
+                raise Exception(f"Model initialization failed with file {fname}")
+
+            # Train
+            training_error_rate = model.train(eta = 0.0001, epochs = 250)
+            if (training_error_rate == -1):
+                self.work.remove(fname)
+                raise Exception("Model training failed!")
+                
+            print(f"Finished training {fname} with error rate: {training_error_rate}")
+
+            # New weights
+            trained_V, trained_W = model.get_weights()
+
+
+            # Store local model 
+            self.models[fname] = {
+                'V': trained_V,
+                'W': trained_W,
+                'status': 'ready'
+            }
+
+            # Remove file from work set 
+            self.work.remove(fname)
+
+
+        except Exception as e:
+            print(f"Exception in training thread: {e}")
+            if fname in self.work:
+                self.work.remove(fname)
 
     '''
     Connect to another node in the network
