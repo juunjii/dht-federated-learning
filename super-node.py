@@ -13,8 +13,8 @@ from thrift.server import TServer
 
 
 # from coordinator import coordinator
-from super import super
-from super.ttypes import Node
+from supernode import super
+from supernode.ttypes import Node
 from ML import *
 
 

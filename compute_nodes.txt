@@ -1,1 +1,2 @@
-csel-kh1250-21.cselabs.umn.edu, 8000
+csel-kh1260-17.cselabs.umn.edu, 8000
+localhost, 8001

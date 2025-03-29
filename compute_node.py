@@ -17,7 +17,7 @@ from thrift.server import TServer
 
 from compute import compute
 from compute.ttypes import WeightMatrices
-from super import super 
+from supernode import super 
 from ML import *
 from math import ceil, log2
 
@@ -26,7 +26,7 @@ MAX_NODES = 10
 
 
 class ComputeNodeHandler:
-    def __init__(self, host, port, supernode_host='localhost', supernode_port=9091):
+    def __init__(self, host, port, supernode_host, supernode_port):
         # Connection information to other nodes in network
         self.host = host
         self.port = port
@@ -163,10 +163,10 @@ class ComputeNodeHandler:
         client, transport = self.connect_to_supernode()
         if client and transport:
             try:
-                self.node_id = super.request_join(self.port)
+                self.node_id = client.request_join(self.port)
                 print(f"Node joins with ID: {self.node_id}")
                 
-                connection_point = super.get_node() # Node(ip, port)
+                connection_point = client.get_node() # Node(ip, port)
                 conn_ip, conn_port = connection_point.ip, connection_point.port 
                 print(f"Node joins with connection point: {connection_point.ip, connection_point.port}")
                 
@@ -653,15 +653,16 @@ class ComputeNodeHandler:
 
     # Set up the server
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        print("Usage: python compute_node.py <port> <supernode_port>")
+    if len(sys.argv) != 4:
+        print("Usage: python compute_node.py <port> <supernode_host> <supernode_port>")
         sys.exit(1)
     
     port = int(sys.argv[1])
-    supernode_port = int(sys.argv[2])
+    supernode_host = sys.argv[2]
+    supernode_port = int(sys.argv[3])
     
     # Create handler
-    handler = ComputeNodeHandler('localhost', port, supernode_port=supernode_port)
+    handler = ComputeNodeHandler('localhost', port, supernode_host=supernode_host, supernode_port=supernode_port)
     
     # Initialize node by joining the network
     handler.node_join()
