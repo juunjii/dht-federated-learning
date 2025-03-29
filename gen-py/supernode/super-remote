@@ -28,6 +28,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
     print('  void confirm_join(i32 node_id)')
     print('  Node get_node()')
     print('  string print_info()')
+    print('  i32 get_max_nodes()')
     print('')
     sys.exit(0)
 
@@ -130,6 +131,12 @@ elif cmd == 'print_info':
         print('print_info requires 0 args')
         sys.exit(1)
     pp.pprint(client.print_info())
+
+elif cmd == 'get_max_nodes':
+    if len(args) != 0:
+        print('get_max_nodes requires 0 args')
+        sys.exit(1)
+    pp.pprint(client.get_max_nodes())
 
 else:
     print('Unrecognized method %s' % cmd)

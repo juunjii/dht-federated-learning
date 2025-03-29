@@ -18,10 +18,6 @@ from supernode.ttypes import Node
 from ML import *
 
 
-# Macro for max nodes possbile in network
-MAX_NODES = 10
-
-
 class SuperHandler:
     def __init__(self, max_nodes=10):
         # Maximum nodes in the network
@@ -44,6 +40,11 @@ class SuperHandler:
 
         self.parse_compute_nodes()
 
+    '''
+    Compute node knows what the maximum network capacity 
+    '''
+    def get_max_nodes(self):
+        return self.max_nodes
 
     '''
     Parse list of compute nodes from text file; 

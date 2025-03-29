@@ -15,4 +15,8 @@ service super {
     
     # Debugging
     string print_info()
+
+    i32 get_max_nodes()
+
+
 }

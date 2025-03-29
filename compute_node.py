@@ -22,9 +22,6 @@ import socket
 from ML import *
 from math import ceil, log2
 
-# Macro for maximum network capacity 
-MAX_NODES = 2
-
 
 class ComputeNodeHandler:
     def __init__(self, host, port, supernode_host, supernode_port):
@@ -34,13 +31,20 @@ class ComputeNodeHandler:
         self.addr = (host, port)
         self.node_id = None
 
+        # Supernode information (for joining)
+        self.supernode_host = supernode_host
+        self.supernode_port = supernode_port
+
+        # Get MAX_NODES value from supernode
+        self.max_nodes = self.get_max_nodes_from_supernode()
+
         # Finger table variables
         self.pred = None # tuple 
         self.pred_id = None
         self.succ = None # tuple
         self.succ_id = None
-        self.finger_table = [None] * int(ceil(log2(MAX_NODES)) + 1) 
-        self.finger_ids = [None] * int(ceil(log2(MAX_NODES))+ 1)
+        self.finger_table = [None] * int(ceil(log2(self.max_nodes)) + 1) 
+        self.finger_ids = [None] * int(ceil(log2(self.max_nodes))+ 1)
 
         # Tracks current files used for training
         self.work= set()
@@ -48,13 +52,14 @@ class ComputeNodeHandler:
         # Stores local models for client query
         self.models = {}
 
-        # Supernode information (for joining)
-        self.supernode_host = supernode_host
-        self.supernode_port = supernode_port
+      
 
         # For tracking the path of data through the network (for debugging)
         self.data_path = {}
-    
+
+     
+
+
     '''
     Connect to another node in the network
     '''
@@ -69,6 +74,24 @@ class ComputeNodeHandler:
         except Exception as e:
             print(f"Failed to connect to node {self.supernode_host}:{self.supernode_port} - {e}")
             return None, None  
+        
+    def get_max_nodes_from_supernode(self):
+        # Connect to supernode to get max_nodes value
+        client, transport = self.connect_to_supernode()
+        if client is None or transport is None:
+            print("Failed to connect to supernode, using default MAX_NODES=5")
+            return 5
+        
+        try:
+            max_nodes = client.get_max_nodes()
+            print(f"Retrieved MAX_NODES={max_nodes} from supernode")
+            return max_nodes
+        except Exception as e:
+            print(f"Error getting max_nodes from supernode: {e}")
+            return 5 # Default fallback value
+        finally:
+            if transport is not None:
+                transport.close()
     
     '''
     Find the successor for specified node
@@ -137,21 +160,17 @@ class ComputeNodeHandler:
         #     return -1
 
         if node_id == self.node_id:
-            print('a.a')
             return self.addr
             
         if node_id == self.succ_id and self.succ is not None:
-            print('a.b')
             return self.succ
             
         if node_id == self.pred_id and self.pred is not None:
-            print('a.c')
             return self.pred
             
         # Check finger table
         for i, id in enumerate(self.finger_ids):
             if id == node_id:
-                print('a.d')
                 return self.finger_table[i]
         
         # Query the network to get successor info
@@ -159,7 +178,6 @@ class ComputeNodeHandler:
 
         # Found node 
         if succ_id == node_id:
-            print('a.e')
 
             succ_ip, succ_port = self.unpack_add(self.succ)
             
@@ -270,14 +288,12 @@ class ComputeNodeHandler:
 
                     # Update own finger table 
                     self.update_finger_table(node_client)
-                    print('z')
-
+                
                     for i in range(len(self.finger_table)):
                         print(f"Entry: {self.finger_table[i]}")
 
                     # Update other finger tables
                     self.update_other_finger_tables()
-                    print('z.a')
                     print(f"Succ_add: {succ_add}")
                     # Set predecessor of new node
                     # New node asks its successor for its predecessor and updates its own predecessor record
@@ -318,22 +334,20 @@ class ComputeNodeHandler:
     def update_finger_table(self, node):
         if not node:
             return -1
-        print('a')
+
         # Number of entries
-        n = int(ceil(log2(MAX_NODES)))
+        n = int(ceil(log2(self.max_nodes)))
 
         # Update entries - start from 1 to (MAX_NODES - 1)
         for i in range(1, n + 1):
            
-            entry_val = (self.node_id + 2**(i-1)) % MAX_NODES
+            entry_val = (self.node_id + 2**(i-1)) % self.max_nodes
           
             # Finger table knows responsible nodes 
             if self.is_between(entry_val, self.node_id, self.succ_id):
-                print('b')
                 self.finger_table[i] = self.succ
                 self.finger_ids[i] = self.succ_id
             else:
-                print('c')
                 # Node find its correct successor
                 # succ_id = node.find_successor(entry_val)
                 succ_info = node.find_successor(entry_val)
@@ -343,7 +357,6 @@ class ComputeNodeHandler:
                 print(f"succ_id = {succ_id}; succ_add = {succ_add}")
                 self.finger_ids[i] = succ_id
                 self.finger_table[i] = succ_add
-        print('d')
         
     '''
     Given node address, return the respective node id
@@ -405,7 +418,6 @@ class ComputeNodeHandler:
            
             # If we're still at the current node
             if curr_addr == self.addr:  
-                print("z.c")
                 # Move to the closest preceding finger entry
                 # curr_addr = self.get_closest_finger_entry(node_id)
 
@@ -418,7 +430,6 @@ class ComputeNodeHandler:
                 curr_id = self.get_node_id(curr_addr)
             # Connect to the remote node and ask for its closest preceding finger
             else:
-                print("z.d")
                 ip, port = self.unpack_add(curr_addr)
                 client, transport = self.connect_to_node(ip, port)
                 if client and transport:
@@ -439,10 +450,10 @@ class ComputeNodeHandler:
         return curr_addr
     
     def fix_fingers(self):
-        n = int(ceil(log2(MAX_NODES)))
+        n = int(ceil(log2(self.max_nodes)))
 
         for i in range(1, n + 1):
-            e = (self.node_id + 2**(i - 1)) % MAX_NODES
+            e = (self.node_id + 2**(i - 1)) % self.max_nodes
 
             # Get successor info
             # succ_id = self.find_successor(e)
@@ -473,20 +484,18 @@ class ComputeNodeHandler:
     '''
     def update_other_finger_tables(self):
         # Number of entries
-        n = int(ceil(log2(MAX_NODES)))
+        n = int(ceil(log2(self.max_nodes)))
 
         # Update entries - start from 1 to (MAX_NODES - 1)
         for i in range(1, n + 1):
-            print("z.b")
             # Get previous entry
-            pred = (self.node_id - 2**(i-1)) % MAX_NODES
+            pred = (self.node_id - 2**(i-1)) % self.max_nodes
 
             # Find the address of predecessor
             pred_addr = self.find_predecessor(pred)
             
             # Update predecessor's finger table (invalid when new node join)
             if pred_addr != self.addr:  
-                print('e')
                 print(f"pred_add: {pred_addr}")
                 ip, port = self.unpack_add(pred_addr)
                 client, transport = self.connect_to_node(ip, port)
@@ -496,8 +505,6 @@ class ComputeNodeHandler:
                     # Ensures that connection would be closed
                     finally: 
                         transport.close() 
-            print('f')
-        print('g')
 
     '''
     Hash fname to numerical key value 
@@ -508,7 +515,7 @@ class ComputeNodeHandler:
         if not fname:
             return None
 
-        return hash(fname) % MAX_NODES
+        return hash(fname) % self.max_nodes
     
     '''
     Using the ID of their predecessor, nodes will accept keys with values 
@@ -522,7 +529,7 @@ class ComputeNodeHandler:
         if id1 < id2:
             return id1 < key <= id2
         else: # Wrap around when range crosses (MAX_NODES -1)
-            return id1 < key <= MAX_NODES-1 or 0 <= key <= id2
+            return id1 < key <= self.max_nodes-1 or 0 <= key <= id2
 
 
     '''
@@ -545,7 +552,7 @@ class ComputeNodeHandler:
     def get_closest_finger_entry(self, key):
         
         # Total entries
-        n = int(ceil(log2(MAX_NODES))) 
+        n = int(ceil(log2(self.max_nodes))) 
         
         # Ensure lookup is faster by starting from bottom entries
         for i in range(n, 0, -1):
@@ -723,13 +730,13 @@ class ComputeNodeHandler:
     def get_responsible_key_range(self):
         """Get the range of keys this node is responsible for"""
         if self.pred_id is None:
-            return f"[0-{MAX_NODES-1}]"
+            return f"[0-{self.max_nodes-1}]"
             
         # Keys from (predecessor, self]
         if self.pred_id < self.node_id:
             return f"({self.pred_id}-{self.node_id}]"
         else:  # Wrapping around
-            return f"({self.pred_id}-{MAX_NODES-1}] and [0-{self.node_id}]"
+            return f"({self.pred_id}-{self.max_nodes-1}] and [0-{self.node_id}]"
             
     def print_info(self):
         """Print information about the node state"""
