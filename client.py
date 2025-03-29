@@ -114,7 +114,7 @@ class ClientHandler:
             print("Error: Not connected to network")
             return -1
         
-        files = self.get_files()
+        files = self.get_files(dir=dir)
 
         print(f"Distributing {len(files)} files across the network...")
 
@@ -234,7 +234,7 @@ if __name__ == '__main__':
     client = ClientHandler(supernode_port=supernode_port)
     
     # Connect to network
-    if client.connect_to_network() == -1:
+    if client.join_network() == -1:
         print("Failed to connect to network")
         sys.exit(1)
     
@@ -248,6 +248,6 @@ if __name__ == '__main__':
     time.sleep(10)
     
     # Aggregate models and validate
-    if client.aggregate_models(training_dir) == -1:
+    if client.aggregrate_models(training_dir) == -1:
         print("Failed to aggregate models")
         sys.exit(1)

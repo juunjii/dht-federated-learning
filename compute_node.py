@@ -38,8 +38,8 @@ class ComputeNodeHandler:
         self.pred_id = None
         self.succ = None # tuple
         self.succ_id = None
-        self.finger_table = [None] * int(ceil(log2(MAX_NODES))) 
-        self.finger_ids = [None] * int(ceil(log2(MAX_NODES)))
+        self.finger_table = [None] * (int(ceil(log2(MAX_NODES))) + 1) 
+        self.finger_ids = [None] * (int(ceil(log2(MAX_NODES))) + 1)
 
         # Tracks current files used for training
         self.work= set()
@@ -104,7 +104,7 @@ class ComputeNodeHandler:
     Get corresponding address (host, port) of node by querying the network
     '''
     def get_node_addreess(self, node_id):
-        if not node_id:
+        if node_id is None:
             return -1
 
         if node_id == self.node_id:
@@ -136,7 +136,7 @@ class ComputeNodeHandler:
                 finally: 
                     transport.close() 
         
-        return self.successor  
+        return self.succ  
     
     '''
     Successor correctly updates its predecessor reference when new node joins network
@@ -272,8 +272,8 @@ class ComputeNodeHandler:
         if address == self.addr:
             return self.node_id
             
-        if address == self.successor:
-            return self.successor_id
+        if address == self.succ:
+            return self.succ_id
             
         if address == self.predecessor:
             return self.predecessor_id
@@ -305,7 +305,7 @@ class ComputeNodeHandler:
     '''
     def find_predecessor(self, node_id):
         # Sanitize
-        if not node_id:
+        if node_id is None:
             return -1
         
         # One node in network
@@ -381,7 +381,6 @@ class ComputeNodeHandler:
         for i in range(1, n + 1):
             # Get previous entry
             pred = (self.node_id - 2**(i-1)) % MAX_NODES
-
             # Find the address of predecessor
             pred_addr = self.find_predecessor(pred)
             
@@ -413,7 +412,7 @@ class ComputeNodeHandler:
     '''
     def is_between(self, key, id1, id2):
         # Sanitize
-        if not key or key < -1:
+        if key is None or key < -1:
             return None
         
         if id1 < id2:
@@ -426,15 +425,25 @@ class ComputeNodeHandler:
     Reach the node responsible for the file
     '''
     def reach_destination(self, key):
-        # Sanitize
         if not key or key < -1:
             return None
-         
+        # check if the accepted key range
+        if self.pred_id < key <= self.node_id:
+            return True
+        
+        # this is the case where part of the key range is reset back to 0
+        if self.node_id < self.pred_id and (key > self.pred_id or key <= self.node_id):
+            return True
+        
         # Single node in network (no predecessors)
         if self.pred_id == self.node_id:
             return True
-
-        return self.is_between(key, self.pred_id, self.node_id)
+        
+        closest_succ = self.get_closest_finger_entry(key)
+        if closest_succ == self.addr: 
+            return True
+        
+        return False
 
     '''
     Get closest finger preceding ID
@@ -466,8 +475,8 @@ class ComputeNodeHandler:
         
         closest_succ = self.get_closest_finger_entry(key)
         if closest_succ == self.addr: 
-            return self.successor
-        
+            return self.succ
+
         return closest_succ
         
     
@@ -570,7 +579,7 @@ class ComputeNodeHandler:
     '''
     def unpack_add(self, add):
         # Sanitize
-        if not add:
+        if add is None:
             return None
 
         host, port = add
@@ -598,6 +607,7 @@ class ComputeNodeHandler:
             # Add to work set
             self.work.add(fname)
             # Start training
+            print("args,", fname)
             Thread(target=self.train, args=(fname)).start()
         # Continue forwarding 
         else:
