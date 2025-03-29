@@ -35,12 +35,7 @@ class Iface(object):
         """
         pass
 
-    def fix_fingers(self, visited):
-        """
-        Parameters:
-         - visited
-
-        """
+    def fix_fingers(self):
         pass
 
     def print_info(self):
@@ -53,6 +48,14 @@ class Iface(object):
         pass
 
     def get_predecessor(self):
+        pass
+
+    def find_predecessor(self, id):
+        """
+        Parameters:
+         - id
+
+        """
         pass
 
     def update_predecessor(self, node):
@@ -148,19 +151,13 @@ class Client(Iface):
             return result.success
         raise TApplicationException(TApplicationException.MISSING_RESULT, "get_model failed: unknown result")
 
-    def fix_fingers(self, visited):
-        """
-        Parameters:
-         - visited
-
-        """
-        self.send_fix_fingers(visited)
+    def fix_fingers(self):
+        self.send_fix_fingers()
         self.recv_fix_fingers()
 
-    def send_fix_fingers(self, visited):
+    def send_fix_fingers(self):
         self._oprot.writeMessageBegin('fix_fingers', TMessageType.CALL, self._seqid)
         args = fix_fingers_args()
-        args.visited = visited
         args.write(self._oprot)
         self._oprot.writeMessageEnd()
         self._oprot.trans.flush()
@@ -281,6 +278,38 @@ class Client(Iface):
         if result.success is not None:
             return result.success
         raise TApplicationException(TApplicationException.MISSING_RESULT, "get_predecessor failed: unknown result")
+
+    def find_predecessor(self, id):
+        """
+        Parameters:
+         - id
+
+        """
+        self.send_find_predecessor(id)
+        return self.recv_find_predecessor()
+
+    def send_find_predecessor(self, id):
+        self._oprot.writeMessageBegin('find_predecessor', TMessageType.CALL, self._seqid)
+        args = find_predecessor_args()
+        args.id = id
+        args.write(self._oprot)
+        self._oprot.writeMessageEnd()
+        self._oprot.trans.flush()
+
+    def recv_find_predecessor(self):
+        iprot = self._iprot
+        (fname, mtype, rseqid) = iprot.readMessageBegin()
+        if mtype == TMessageType.EXCEPTION:
+            x = TApplicationException()
+            x.read(iprot)
+            iprot.readMessageEnd()
+            raise x
+        result = find_predecessor_result()
+        result.read(iprot)
+        iprot.readMessageEnd()
+        if result.success is not None:
+            return result.success
+        raise TApplicationException(TApplicationException.MISSING_RESULT, "find_predecessor failed: unknown result")
 
     def update_predecessor(self, node):
         """
@@ -446,6 +475,7 @@ class Processor(Iface, TProcessor):
         self._processMap["get_id"] = Processor.process_get_id
         self._processMap["get_successor"] = Processor.process_get_successor
         self._processMap["get_predecessor"] = Processor.process_get_predecessor
+        self._processMap["find_predecessor"] = Processor.process_find_predecessor
         self._processMap["update_predecessor"] = Processor.process_update_predecessor
         self._processMap["set_predecessor"] = Processor.process_set_predecessor
         self._processMap["get_finger_table"] = Processor.process_get_finger_table
@@ -513,7 +543,7 @@ class Processor(Iface, TProcessor):
         iprot.readMessageEnd()
         result = fix_fingers_result()
         try:
-            self._handler.fix_fingers(args.visited)
+            self._handler.fix_fingers()
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
@@ -618,6 +648,29 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.EXCEPTION
             result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
         oprot.writeMessageBegin("get_predecessor", msg_type, seqid)
+        result.write(oprot)
+        oprot.writeMessageEnd()
+        oprot.trans.flush()
+
+    def process_find_predecessor(self, seqid, iprot, oprot):
+        args = find_predecessor_args()
+        args.read(iprot)
+        iprot.readMessageEnd()
+        result = find_predecessor_result()
+        try:
+            result.success = self._handler.find_predecessor(args.id)
+            msg_type = TMessageType.REPLY
+        except TTransport.TTransportException:
+            raise
+        except TApplicationException as ex:
+            logging.exception('TApplication exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = ex
+        except Exception:
+            logging.exception('Unexpected exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+        oprot.writeMessageBegin("find_predecessor", msg_type, seqid)
         result.write(oprot)
         oprot.writeMessageEnd()
         oprot.trans.flush()
@@ -927,15 +980,7 @@ get_model_result.thrift_spec = (
 
 
 class fix_fingers_args(object):
-    """
-    Attributes:
-     - visited
 
-    """
-
-
-    def __init__(self, visited=None,):
-        self.visited = visited
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -946,16 +991,6 @@ class fix_fingers_args(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
-            if fid == 1:
-                if ftype == TType.SET:
-                    self.visited = set()
-                    (_etype31, _size28) = iprot.readSetBegin()
-                    for _i32 in range(_size28):
-                        _elem33 = iprot.readI32()
-                        self.visited.add(_elem33)
-                    iprot.readSetEnd()
-                else:
-                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -966,13 +1001,6 @@ class fix_fingers_args(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('fix_fingers_args')
-        if self.visited is not None:
-            oprot.writeFieldBegin('visited', TType.SET, 1)
-            oprot.writeSetBegin(TType.I32, len(self.visited))
-            for iter34 in self.visited:
-                oprot.writeI32(iter34)
-            oprot.writeSetEnd()
-            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -991,8 +1019,6 @@ class fix_fingers_args(object):
         return not (self == other)
 all_structs.append(fix_fingers_args)
 fix_fingers_args.thrift_spec = (
-    None,  # 0
-    (1, TType.SET, 'visited', (TType.I32, None, False), None, ),  # 1
 )
 
 
@@ -1456,6 +1482,130 @@ get_predecessor_result.thrift_spec = (
 )
 
 
+class find_predecessor_args(object):
+    """
+    Attributes:
+     - id
+
+    """
+
+
+    def __init__(self, id=None,):
+        self.id = id
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.I32:
+                    self.id = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('find_predecessor_args')
+        if self.id is not None:
+            oprot.writeFieldBegin('id', TType.I32, 1)
+            oprot.writeI32(self.id)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(find_predecessor_args)
+find_predecessor_args.thrift_spec = (
+    None,  # 0
+    (1, TType.I32, 'id', None, None, ),  # 1
+)
+
+
+class find_predecessor_result(object):
+    """
+    Attributes:
+     - success
+
+    """
+
+
+    def __init__(self, success=None,):
+        self.success = success
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 0:
+                if ftype == TType.STRUCT:
+                    self.success = NodeInfo()
+                    self.success.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('find_predecessor_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.STRUCT, 0)
+            self.success.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(find_predecessor_result)
+find_predecessor_result.thrift_spec = (
+    (0, TType.STRUCT, 'success', [NodeInfo, None], None, ),  # 0
+)
+
+
 class update_predecessor_args(object):
     """
     Attributes:
@@ -1745,10 +1895,10 @@ class get_finger_table_result(object):
             if fid == 0:
                 if ftype == TType.LIST:
                     self.success = []
-                    (_etype38, _size35) = iprot.readListBegin()
-                    for _i39 in range(_size35):
-                        _elem40 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                        self.success.append(_elem40)
+                    (_etype31, _size28) = iprot.readListBegin()
+                    for _i32 in range(_size28):
+                        _elem33 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        self.success.append(_elem33)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -1765,8 +1915,8 @@ class get_finger_table_result(object):
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.LIST, 0)
             oprot.writeListBegin(TType.STRING, len(self.success))
-            for iter41 in self.success:
-                oprot.writeString(iter41.encode('utf-8') if sys.version_info[0] == 2 else iter41)
+            for iter34 in self.success:
+                oprot.writeString(iter34.encode('utf-8') if sys.version_info[0] == 2 else iter34)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()

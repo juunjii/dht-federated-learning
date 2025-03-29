@@ -81,6 +81,8 @@ class SuperHandler:
     Returns a unique ID to use when joining the network 
     '''
     def request_join(self, port):
+      
+
         # Sanitize input
         if port not in self.compute_nodes:
             print(f"Error: Port {port} is not in config file.")
@@ -94,8 +96,9 @@ class SuperHandler:
         # Return unique node id
         node_id = self.generate_id(self.max_nodes)
         if node_id == -1:
-            print(f"Error: {self.max_nodes} exceeds the maximum number of possible nodes in the network - {MAX_NODES}")
-
+            print(f"Error: {self.max_nodes} exceeds the maximum number of possible nodes in the network - {self.max_nodes}")
+        print(f"Node_ids: {self.node_ids}")
+        
         # Tracks current node joining network
         self.node_joining = node_id
         self.node_join_port[node_id] = port

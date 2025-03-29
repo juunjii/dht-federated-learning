@@ -3,3 +3,4 @@ csel-kh1250-21.cselabs.umn.edu, 8001
 csel-kh1260-17.cselabs.umn.edu, 8002
 csel-kh1260-17.cselabs.umn.edu, 8003
 csel-kh1260-17.cselabs.umn.edu, 8004
+csel-kh1262-10.cselabs.umn.edu, 8004
