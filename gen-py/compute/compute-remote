@@ -26,7 +26,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
     print('Functions:')
     print('  void put_data(string filename)')
     print('  WeightMatrices get_model(string filename)')
-    print('  void fix_fingers()')
+    print('  void fix_fingers( visited)')
     print('  string print_info()')
     print('  i32 get_id()')
     print('  string get_successor()')
@@ -128,10 +128,10 @@ elif cmd == 'get_model':
     pp.pprint(client.get_model(args[0],))
 
 elif cmd == 'fix_fingers':
-    if len(args) != 0:
-        print('fix_fingers requires 0 args')
+    if len(args) != 1:
+        print('fix_fingers requires 1 args')
         sys.exit(1)
-    pp.pprint(client.fix_fingers())
+    pp.pprint(client.fix_fingers(eval(args[0]),))
 
 elif cmd == 'print_info':
     if len(args) != 0:

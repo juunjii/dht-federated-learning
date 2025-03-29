@@ -35,7 +35,12 @@ class Iface(object):
         """
         pass
 
-    def fix_fingers(self):
+    def fix_fingers(self, visited):
+        """
+        Parameters:
+         - visited
+
+        """
         pass
 
     def print_info(self):
@@ -143,13 +148,19 @@ class Client(Iface):
             return result.success
         raise TApplicationException(TApplicationException.MISSING_RESULT, "get_model failed: unknown result")
 
-    def fix_fingers(self):
-        self.send_fix_fingers()
+    def fix_fingers(self, visited):
+        """
+        Parameters:
+         - visited
+
+        """
+        self.send_fix_fingers(visited)
         self.recv_fix_fingers()
 
-    def send_fix_fingers(self):
+    def send_fix_fingers(self, visited):
         self._oprot.writeMessageBegin('fix_fingers', TMessageType.CALL, self._seqid)
         args = fix_fingers_args()
+        args.visited = visited
         args.write(self._oprot)
         self._oprot.writeMessageEnd()
         self._oprot.trans.flush()
@@ -502,7 +513,7 @@ class Processor(Iface, TProcessor):
         iprot.readMessageEnd()
         result = fix_fingers_result()
         try:
-            self._handler.fix_fingers()
+            self._handler.fix_fingers(args.visited)
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
@@ -916,7 +927,15 @@ get_model_result.thrift_spec = (
 
 
 class fix_fingers_args(object):
+    """
+    Attributes:
+     - visited
 
+    """
+
+
+    def __init__(self, visited=None,):
+        self.visited = visited
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -927,6 +946,16 @@ class fix_fingers_args(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.SET:
+                    self.visited = set()
+                    (_etype31, _size28) = iprot.readSetBegin()
+                    for _i32 in range(_size28):
+                        _elem33 = iprot.readI32()
+                        self.visited.add(_elem33)
+                    iprot.readSetEnd()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -937,6 +966,13 @@ class fix_fingers_args(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('fix_fingers_args')
+        if self.visited is not None:
+            oprot.writeFieldBegin('visited', TType.SET, 1)
+            oprot.writeSetBegin(TType.I32, len(self.visited))
+            for iter34 in self.visited:
+                oprot.writeI32(iter34)
+            oprot.writeSetEnd()
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -955,6 +991,8 @@ class fix_fingers_args(object):
         return not (self == other)
 all_structs.append(fix_fingers_args)
 fix_fingers_args.thrift_spec = (
+    None,  # 0
+    (1, TType.SET, 'visited', (TType.I32, None, False), None, ),  # 1
 )
 
 
@@ -1707,10 +1745,10 @@ class get_finger_table_result(object):
             if fid == 0:
                 if ftype == TType.LIST:
                     self.success = []
-                    (_etype31, _size28) = iprot.readListBegin()
-                    for _i32 in range(_size28):
-                        _elem33 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                        self.success.append(_elem33)
+                    (_etype38, _size35) = iprot.readListBegin()
+                    for _i39 in range(_size35):
+                        _elem40 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        self.success.append(_elem40)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -1727,8 +1765,8 @@ class get_finger_table_result(object):
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.LIST, 0)
             oprot.writeListBegin(TType.STRING, len(self.success))
-            for iter34 in self.success:
-                oprot.writeString(iter34.encode('utf-8') if sys.version_info[0] == 2 else iter34)
+            for iter41 in self.success:
+                oprot.writeString(iter41.encode('utf-8') if sys.version_info[0] == 2 else iter41)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()

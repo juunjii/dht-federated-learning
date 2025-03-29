@@ -43,8 +43,8 @@ class ComputeNodeHandler:
         self.pred_id = None
         self.succ = None # tuple
         self.succ_id = None
-        self.finger_table = [None] * int(ceil(log2(self.max_nodes)) + 1) 
-        self.finger_ids = [None] * int(ceil(log2(self.max_nodes))+ 1)
+        self.finger_table = [None] * int(ceil(log2(self.max_nodes)) + 2) 
+        self.finger_ids = [None] * int(ceil(log2(self.max_nodes))+ 2)
 
         # Tracks current files used for training
         self.work= set()
@@ -111,12 +111,21 @@ class ComputeNodeHandler:
     #     if closest == self.addr:
     #         return self.succ_id
     def find_successor(self, node_id):
+        print(f"Node {self.node_id} searching for successor of {node_id}")
+        print(f"Current successor is {self.succ_id}")
+
+        # Check the between condition
+        between = self.is_between(node_id, self.node_id, self.succ_id)
+        print(f"Is {node_id} between {self.node_id} and {self.succ_id}? {between}")
+
         # If node id is between own node id and successor id 
         if self.is_between(node_id, self.node_id, self.succ_id):
+            print(f"Key {node_id} belongs to successor {self.succ_id}")
             return NodeInfo(node_id=self.succ_id, node_addr=str(self.succ)) # Return both ID and address
         
         # Find the closest preceding node
         closest = self.get_closest_finger_entry(node_id)
+        print(f"Closest preceding node for key {node_id} is {closest}")
         
         # No better routing option available 
         if closest == self.addr:
@@ -126,7 +135,7 @@ class ComputeNodeHandler:
         ip, port = self.unpack_add(closest)
         client, transport = self.connect_to_node(ip, port)
         if client is None or transport is None:
-            print(f"Failed to connect to network via connection point: {conn_ip, conn_port}")
+            print(f"Failed to connect to network via connection point: {ip, port}")
             return
         else:
             try:
@@ -152,44 +161,44 @@ class ComputeNodeHandler:
         return self.node_id
     
     
-    '''
-    Get corresponding address (host, port) of node by querying the network
-    '''
-    def get_node_address(self, node_id):
-        # if not node_id:
-        #     return -1
+    # '''
+    # Get corresponding address (host, port) of node by querying the network
+    # '''
+    # def get_node_address(self, node_id):
+    #     # if not node_id:
+    #     #     return -1
 
-        if node_id == self.node_id:
-            return self.addr
+    #     if node_id == self.node_id:
+    #         return self.addr
             
-        if node_id == self.succ_id and self.succ is not None:
-            return self.succ
+    #     if node_id == self.succ_id and self.succ is not None:
+    #         return self.succ
             
-        if node_id == self.pred_id and self.pred is not None:
-            return self.pred
+    #     if node_id == self.pred_id and self.pred is not None:
+    #         return self.pred
             
-        # Check finger table
-        for i, id in enumerate(self.finger_ids):
-            if id == node_id:
-                return self.finger_table[i]
+    #     # Check finger table
+    #     for i, id in enumerate(self.finger_ids):
+    #         if id == node_id:
+    #             return self.finger_table[i]
         
-        # Query the network to get successor info
-        succ_id = self.find_successor(node_id)
+    #     # Query the network to get successor info
+    #     succ_id = self.find_successor(node_id)
 
-        # Found node 
-        if succ_id == node_id:
+    #     # Found node 
+    #     if succ_id == node_id:
 
-            succ_ip, succ_port = self.unpack_add(self.succ)
+    #         succ_ip, succ_port = self.unpack_add(self.succ)
             
-            client, transport = self.connect_to_node(succ_ip, succ_port)
-            if client and transport:
-                try:
-                    return client.get_predecessor()
-                # Ensures that connection would be closed
-                finally: 
-                    transport.close() 
+    #         client, transport = self.connect_to_node(succ_ip, succ_port)
+    #         if client and transport:
+    #             try:
+    #                 return client.get_predecessor()
+    #             # Ensures that connection would be closed
+    #             finally: 
+    #                 transport.close() 
         
-        return self.succ
+    #     return self.succ
     
     '''
     Successor correctly updates its predecessor reference when new node joins network
@@ -252,7 +261,8 @@ class ComputeNodeHandler:
                 self.pred_id = self.node_id
                 
                 # Initialize finger table to point to self
-                for i in range(len(self.finger_table)):
+                # for i in range(len(self.finger_table)):
+                for i in range(1, len(self.finger_table)):
                     self.finger_table[i] = self.addr
                     self.finger_ids[i] = self.node_id
                 try:
@@ -283,8 +293,10 @@ class ComputeNodeHandler:
                     self.succ = succ_add
 
                     # Update finger table with successor (1st entry)
-                    self.finger_ids[0] = succ_id
-                    self.finger_table[0] = succ_add
+                    # self.finger_ids[0] = succ_id
+                    # self.finger_table[0] = succ_add
+                    self.finger_ids[1] = succ_id
+                    self.finger_table[1] = succ_add
 
                     # Update own finger table 
                     self.update_finger_table(node_client)
@@ -334,15 +346,15 @@ class ComputeNodeHandler:
     def update_finger_table(self, node):
         if not node:
             return -1
-
+        print(f"Node {self.node_id} updating finger table...")
         # Number of entries
         n = int(ceil(log2(self.max_nodes)))
+        print(f"Will update {n} entries (1 to {n})")
 
         # Update entries - start from 1 to (MAX_NODES - 1)
         for i in range(1, n + 1):
-           
             entry_val = (self.node_id + 2**(i-1)) % self.max_nodes
-          
+            print(f"Entry {i}: looking for node responsible for key {entry_val}")
             # Finger table knows responsible nodes 
             if self.is_between(entry_val, self.node_id, self.succ_id):
                 self.finger_table[i] = self.succ
@@ -357,7 +369,12 @@ class ComputeNodeHandler:
                 print(f"succ_id = {succ_id}; succ_add = {succ_add}")
                 self.finger_ids[i] = succ_id
                 self.finger_table[i] = succ_add
-        
+            print(f"Updated entry {i} to node {self.finger_ids[i]} at {self.finger_table[i]}")
+
+            print("Finger table after update:")
+            for i, (addr, node_id) in enumerate(zip(self.finger_table, self.finger_ids)):
+                if addr:
+                    print(f"  [{i}]: Node {node_id} at {addr}")
     '''
     Given node address, return the respective node id
     '''
@@ -449,33 +466,53 @@ class ComputeNodeHandler:
         
         return curr_addr
     
-    def fix_fingers(self):
+    def fix_fingers(self, visited = None):
+        if visited is None:
+            visited = set([self.node_id])  # Initialize with current node
+        else:
+            if self.node_id in visited:
+                return  # Already visited this node, stop recursion
+            visited.add(self.node_id)  # Add current node to visited set
+
         n = int(ceil(log2(self.max_nodes)))
+        print(f"Node {self.node_id} fixing {n} finger table entries")
 
         for i in range(1, n + 1):
+        # for i in range(0, n):
             e = (self.node_id + 2**(i - 1)) % self.max_nodes
-
+            print(f"Entry {i}: Looking for successor of key {e}")
             # Get successor info
             # succ_id = self.find_successor(e)
             # succ_add = self.get_node_address(succ_id)
             succ_info = self.find_successor(e)
             succ_id = succ_info.node_id
             succ_add = eval(succ_info.node_addr)
+            print(f"Found successor: Node {succ_id} at {succ_add}")
 
             # Update finger table with successor
             self.finger_table[i] = succ_add
             self.finger_ids[i] = succ_id
 
-            # Recursively fix finger tables by contacting successor
-            if self.succ != self.addr:
+            # # Recursively fix finger tables by contacting successor
+            # if self.succ != self.addr:
+            #     ip, port = self.unpack_add(self.succ)
+            #     client, transport = self.connect_to_node(ip, port)
+            #     if client and transport:
+            #         try:
+            #             client.fix_fingers()
+            #         # Ensures that connection would be closed
+            #         finally: 
+            #             transport.close() 
+            # Only propagate to successor if not already visited
+            if self.succ != self.addr and self.succ_id not in visited:
+                print(f"Node {self.node_id} propagating fix_fingers to Node {self.succ_id}")
                 ip, port = self.unpack_add(self.succ)
                 client, transport = self.connect_to_node(ip, port)
                 if client and transport:
                     try:
-                        client.fix_fingers()
-                    # Ensures that connection would be closed
-                    finally: 
-                        transport.close() 
+                        client.fix_fingers(visited)
+                    finally:
+                        transport.close()
 
             
     '''
@@ -488,6 +525,7 @@ class ComputeNodeHandler:
 
         # Update entries - start from 1 to (MAX_NODES - 1)
         for i in range(1, n + 1):
+        
             # Get previous entry
             pred = (self.node_id - 2**(i-1)) % self.max_nodes
 
@@ -522,14 +560,25 @@ class ComputeNodeHandler:
     greater than their predecessor’s ID and less than or equal to their own ID
     '''
     def is_between(self, key, id1, id2):
+        print(f"Checking if {key} is between {id1} and {id2}")
+    
         # Sanitize
+        result = None
         if not key or key < -1:
             return None
+        # Handle special case where id1 == id2
+        if id1 == id2:
+        # If all nodes have same ID, any key is "between" them
+        # If this is a self-check, any key other than id1 is not between
+            return True if self.max_nodes == 1 else (key != id1)
         
         if id1 < id2:
-            return id1 < key <= id2
+            # return id1 < key <= id2
+            result = id1 < key <= id2
         else: # Wrap around when range crosses (MAX_NODES -1)
-            return id1 < key <= self.max_nodes-1 or 0 <= key <= id2
+            result = (id1 < key <= self.max_nodes-1) or (0 <= key <= id2)
+        print(f"Result: {result}")
+        return result
 
 
     '''
@@ -560,9 +609,17 @@ class ComputeNodeHandler:
             # print(f"Finger table: {self.finger_table[i]}")
             # Valid forward if FT[i] <=k and FT[i+1] > k
             # If the i-th finger table entry falls in the interval (self.node_id, key]
-            if self.finger_table[i] and self.is_between(self.finger_ids[i], self.node_id, key):
-                return self.finger_table[i] # (host, port) of node
-        
+            # if self.finger_table[i] and self.is_between(self.finger_ids[i], self.node_id, key):
+            #     return self.finger_table[i] # (host, port) of node
+            if i < len(self.finger_table) and self.finger_table[i] is not None:
+                # if self.is_between(self.finger_ids[i], self.node_id, key):
+                #     return self.finger_table[i]
+                entry_id = self.finger_ids[i]
+                # Check if this entry precedes target key but follows current node
+                if self.is_between(entry_id, self.node_id, key):
+                    print(f"Found closest entry: Node {entry_id}")
+                    return self.finger_table[i]
+
         # No suitable entry found, return own successor
         return self.addr
 
@@ -710,7 +767,7 @@ class ComputeNodeHandler:
             # Add to work set
             self.work.add(fname)
             # Start training
-            Thread(target=self.train, args=(fname)).start()
+            Thread(target=self.train, args=(fname,)).start()
         # Continue forwarding 
         else:
             # Return address of node (self.add = (host, port)
@@ -746,9 +803,9 @@ class ComputeNodeHandler:
         info += f"Successor: {self.succ_id} at {self.succ}\n"
         
         info += "Finger Table:\n"
-        for i, (addr, node_id) in enumerate(zip(self.finger_table, self.finger_ids)):
-            if addr:
-                info += f"  [{i}]: Node {node_id} at {addr}\n"
+        for i in range(1, len(self.finger_table)):  # Start from 1, not 0
+            if self.finger_table[i]:
+                info += f"  [{i}]: Node {self.finger_ids[i]} at {self.finger_table[i]}\n"
         
         info += f"Responsible for keys: {self.get_responsible_key_range()}\n"
         

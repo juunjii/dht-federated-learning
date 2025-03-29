@@ -23,7 +23,7 @@ from compute import compute
 from ML import *
 
 class ClientHandler: 
-    def __init__(self, supernode_host= '0.0.0.0', supernode_port=9091):
+    def __init__(self, supernode_host= 'localhost', supernode_port=9091):
         self.supernode_host = supernode_host
         self.supernode_port = supernode_port
         self.connection_point = None
@@ -114,7 +114,7 @@ class ClientHandler:
             print("Error: Not connected to network")
             return -1
         
-        files = self.get_files()
+        files = self.get_files(dir)
 
         print(f"Distributing {len(files)} files across the network...")
 
@@ -148,7 +148,7 @@ class ClientHandler:
             print("Error: Not connected to network")
             return -1
         
-        files = self.get_files()
+        files = self.get_files(dir)
         
         print(f"Collecting models for {len(files)} files from the network...")
 
@@ -223,19 +223,20 @@ class ClientHandler:
 
 # Main client program
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: python client.py <training_dir> <supernode_port>")
+    if len(sys.argv) != 4:
+        print("Usage: python3 client.py <training_dir> <supernode_host> <supernode_port>")
         sys.exit(1)
     
     training_dir = sys.argv[1]
-    supernode_port = sys.argv[2]
+    supernode_host = sys.argv[2]
+    supernode_port = int(sys.argv[3])
 
     # Create client
-    client = ClientHandler(supernode_port=supernode_port)
+    client = ClientHandler(supernode_host=supernode_host, supernode_port=supernode_port)
     
     # Connect to network
-    if client.connect_to_network() == -1:
-        print("Failed to connect to network")
+    if client.join_network() == -1:
+        print("Failed to connect to supernode")
         sys.exit(1)
     
     # Distribute data
@@ -248,6 +249,6 @@ if __name__ == '__main__':
     time.sleep(10)
     
     # Aggregate models and validate
-    if client.aggregate_models(training_dir) == -1:
+    if client.aggregrate_models(training_dir) == -1:
         print("Failed to aggregate models")
         sys.exit(1)

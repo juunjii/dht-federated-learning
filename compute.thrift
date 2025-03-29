@@ -18,7 +18,7 @@ service compute {
     WeightMatrices get_model(1: string filename) 
     
     # Node fixes finger table after a new node joins
-    void fix_fingers() 
+    void fix_fingers(1: set<i32> visited) 
     
     # Print node information for debugging
     string print_info()
