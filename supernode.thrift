@@ -8,7 +8,7 @@ service super {
     i32 request_join(1: i32 port) 
     
     # Confirm a new node's status in the network 
-    void confirm_join(1: i32 node_id) 
+    void confirm_join(1: i32 node_id, 2: i32 port) 
     
     # Returns a random connection point (node) to join the network 
     Node get_node() 

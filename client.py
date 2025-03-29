@@ -23,7 +23,7 @@ from compute import compute
 from ML import *
 
 class ClientHandler: 
-    def __init__(self, supernode_host='localhost', supernode_port=9091):
+    def __init__(self, supernode_host= '0.0.0.0', supernode_port=9091):
         self.supernode_host = supernode_host
         self.supernode_port = supernode_port
         self.connection_point = None

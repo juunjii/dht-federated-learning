@@ -168,10 +168,12 @@ class ComputeNodeHandler:
                 
                 connection_point = client.get_node() # Node(ip, port)
                 conn_ip, conn_port = connection_point.ip, connection_point.port 
-                print(f"Node joins with connection point: {connection_point.ip, connection_point.port}")
+                print(f"Node joins with connection point: {conn_ip, conn_port}")
                 
                 # Empty network
                 if conn_ip == None or conn_port == None:
+                    print(f"Network empty, first node joining...")
+                  
                     # Initialize successor as self
                     self.succ = self.addr
                     self.succ_id = self.node_id
@@ -185,10 +187,13 @@ class ComputeNodeHandler:
                         self.finger_table[i] = self.addr
                         self.finger_ids[i] = self.node_id
 
+                    client.confirm_join(self.node_id)
+
                 # Node joins via connection point 
                 else:
                     client, transport = self.connect_to_node(conn_ip, conn_port)
                     if client and transport:
+                        print(f"Connected to network via connection point: {conn_ip, conn_port}")
                         try:
                             # Find successor for new node 
                             succ_id = client.find_successor(self.node_id)
@@ -225,14 +230,12 @@ class ComputeNodeHandler:
                                 finally: 
                                     transport.close() 
 
-
+                            client.confirm_join(self.node_id)
                         # Ensures that connection would be closed
                         finally: 
                             transport.close() 
-
-
-
-
+                    else:
+                        print(f"Failed to enter network via connection point: {conn_ip, conn_port}")
             # Ensures that connection would be closed
             finally: 
                 transport.close() 
@@ -561,7 +564,7 @@ class ComputeNodeHandler:
         except Exception as e:
             print(f"Failed to connect to node {host}:{port} - {e}")
             return None, None  
-    
+        
     '''
     Unpack the tuple - self.add = (host, port)
     '''
@@ -662,14 +665,14 @@ if __name__ == '__main__':
     supernode_port = int(sys.argv[3])
     
     # Create handler
-    handler = ComputeNodeHandler('localhost', port, supernode_host=supernode_host, supernode_port=supernode_port)
+    handler = ComputeNodeHandler('0.0.0.0', port, supernode_host=supernode_host, supernode_port=supernode_port)
     
     # Initialize node by joining the network
     handler.node_join()
     
     # Start server
     processor = compute.Processor(handler)
-    transport = TSocket.TServerSocket(host='localhost', port=port)
+    transport = TSocket.TServerSocket(host='0.0.0.0', port=port)
     tfactory = TTransport.TBufferedTransportFactory()
     pfactory = TBinaryProtocol.TBinaryProtocolFactory()
     
