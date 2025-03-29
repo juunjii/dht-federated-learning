@@ -167,8 +167,7 @@ class ComputeNodeHandler:
                 print(f"Node joins with ID: {self.node_id}")
                 
                 connection_point = super.get_node() # Node(ip, port)
-                conn_ip = connection_point.ip
-                conn_port = connection_point.port 
+                conn_ip, conn_port = connection_point.ip, connection_point.port 
                 print(f"Node joins with connection point: {connection_point.ip, connection_point.port}")
                 
                 # Empty network
