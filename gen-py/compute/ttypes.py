@@ -125,12 +125,86 @@ class WeightMatrices(object):
 
     def __ne__(self, other):
         return not (self == other)
+
+
+class NodeInfo(object):
+    """
+    Attributes:
+     - node_id
+     - node_addr
+
+    """
+
+
+    def __init__(self, node_id=None, node_addr=None,):
+        self.node_id = node_id
+        self.node_addr = node_addr
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.I32:
+                    self.node_id = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRING:
+                    self.node_addr = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('NodeInfo')
+        if self.node_id is not None:
+            oprot.writeFieldBegin('node_id', TType.I32, 1)
+            oprot.writeI32(self.node_id)
+            oprot.writeFieldEnd()
+        if self.node_addr is not None:
+            oprot.writeFieldBegin('node_addr', TType.STRING, 2)
+            oprot.writeString(self.node_addr.encode('utf-8') if sys.version_info[0] == 2 else self.node_addr)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
 all_structs.append(WeightMatrices)
 WeightMatrices.thrift_spec = (
     None,  # 0
     (1, TType.LIST, 'V', (TType.LIST, (TType.DOUBLE, None, False), False), None, ),  # 1
     (2, TType.LIST, 'W', (TType.LIST, (TType.DOUBLE, None, False), False), None, ),  # 2
     (3, TType.STRING, 'status', 'UTF8', None, ),  # 3
+)
+all_structs.append(NodeInfo)
+NodeInfo.thrift_spec = (
+    None,  # 0
+    (1, TType.I32, 'node_id', None, None, ),  # 1
+    (2, TType.STRING, 'node_addr', 'UTF8', None, ),  # 2
 )
 fix_spec(all_structs)
 del all_structs

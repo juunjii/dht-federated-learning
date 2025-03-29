@@ -5,6 +5,11 @@ struct WeightMatrices {
     3: string status
 }
 
+struct NodeInfo {
+    1: i32 node_id,
+    2: string node_addr
+}
+
 service compute {
     # Place input ML data (filename) into the network 
     oneway void put_data(1: string filename)
@@ -24,6 +29,6 @@ service compute {
     string get_predecessor()
     void set_predecessor(1: string pred_addr, 2: i32 pred_id)
     list<string> get_finger_table()
-    i32 find_successor(1: i32 id)
+    NodeInfo find_successor(1: i32 id)
     void notify(1: i32 node_id, 2: string node_addr)
 }

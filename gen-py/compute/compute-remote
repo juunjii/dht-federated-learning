@@ -33,7 +33,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
     print('  string get_predecessor()')
     print('  void set_predecessor(string pred_addr, i32 pred_id)')
     print('   get_finger_table()')
-    print('  i32 find_successor(i32 id)')
+    print('  NodeInfo find_successor(i32 id)')
     print('  void notify(i32 node_id, string node_addr)')
     print('')
     sys.exit(0)
