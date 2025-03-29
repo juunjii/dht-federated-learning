@@ -50,6 +50,14 @@ class Iface(object):
     def get_predecessor(self):
         pass
 
+    def update_predecessor(self, node):
+        """
+        Parameters:
+         - node
+
+        """
+        pass
+
     def set_predecessor(self, pred_addr, pred_id):
         """
         Parameters:
@@ -263,6 +271,36 @@ class Client(Iface):
             return result.success
         raise TApplicationException(TApplicationException.MISSING_RESULT, "get_predecessor failed: unknown result")
 
+    def update_predecessor(self, node):
+        """
+        Parameters:
+         - node
+
+        """
+        self.send_update_predecessor(node)
+        self.recv_update_predecessor()
+
+    def send_update_predecessor(self, node):
+        self._oprot.writeMessageBegin('update_predecessor', TMessageType.CALL, self._seqid)
+        args = update_predecessor_args()
+        args.node = node
+        args.write(self._oprot)
+        self._oprot.writeMessageEnd()
+        self._oprot.trans.flush()
+
+    def recv_update_predecessor(self):
+        iprot = self._iprot
+        (fname, mtype, rseqid) = iprot.readMessageBegin()
+        if mtype == TMessageType.EXCEPTION:
+            x = TApplicationException()
+            x.read(iprot)
+            iprot.readMessageEnd()
+            raise x
+        result = update_predecessor_result()
+        result.read(iprot)
+        iprot.readMessageEnd()
+        return
+
     def set_predecessor(self, pred_addr, pred_id):
         """
         Parameters:
@@ -397,6 +435,7 @@ class Processor(Iface, TProcessor):
         self._processMap["get_id"] = Processor.process_get_id
         self._processMap["get_successor"] = Processor.process_get_successor
         self._processMap["get_predecessor"] = Processor.process_get_predecessor
+        self._processMap["update_predecessor"] = Processor.process_update_predecessor
         self._processMap["set_predecessor"] = Processor.process_set_predecessor
         self._processMap["get_finger_table"] = Processor.process_get_finger_table
         self._processMap["find_successor"] = Processor.process_find_successor
@@ -568,6 +607,29 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.EXCEPTION
             result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
         oprot.writeMessageBegin("get_predecessor", msg_type, seqid)
+        result.write(oprot)
+        oprot.writeMessageEnd()
+        oprot.trans.flush()
+
+    def process_update_predecessor(self, seqid, iprot, oprot):
+        args = update_predecessor_args()
+        args.read(iprot)
+        iprot.readMessageEnd()
+        result = update_predecessor_result()
+        try:
+            self._handler.update_predecessor(args.node)
+            msg_type = TMessageType.REPLY
+        except TTransport.TTransportException:
+            raise
+        except TApplicationException as ex:
+            logging.exception('TApplication exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = ex
+        except Exception:
+            logging.exception('Unexpected exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+        oprot.writeMessageBegin("update_predecessor", msg_type, seqid)
         result.write(oprot)
         oprot.writeMessageEnd()
         oprot.trans.flush()
@@ -1315,8 +1377,9 @@ class get_predecessor_result(object):
             if ftype == TType.STOP:
                 break
             if fid == 0:
-                if ftype == TType.STRING:
-                    self.success = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                if ftype == TType.STRUCT:
+                    self.success = NodeInfo()
+                    self.success.read(iprot)
                 else:
                     iprot.skip(ftype)
             else:
@@ -1330,8 +1393,8 @@ class get_predecessor_result(object):
             return
         oprot.writeStructBegin('get_predecessor_result')
         if self.success is not None:
-            oprot.writeFieldBegin('success', TType.STRING, 0)
-            oprot.writeString(self.success.encode('utf-8') if sys.version_info[0] == 2 else self.success)
+            oprot.writeFieldBegin('success', TType.STRUCT, 0)
+            self.success.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1351,7 +1414,113 @@ class get_predecessor_result(object):
         return not (self == other)
 all_structs.append(get_predecessor_result)
 get_predecessor_result.thrift_spec = (
-    (0, TType.STRING, 'success', 'UTF8', None, ),  # 0
+    (0, TType.STRUCT, 'success', [NodeInfo, None], None, ),  # 0
+)
+
+
+class update_predecessor_args(object):
+    """
+    Attributes:
+     - node
+
+    """
+
+
+    def __init__(self, node=None,):
+        self.node = node
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.node = NodeInfo()
+                    self.node.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('update_predecessor_args')
+        if self.node is not None:
+            oprot.writeFieldBegin('node', TType.STRUCT, 1)
+            self.node.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(update_predecessor_args)
+update_predecessor_args.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'node', [NodeInfo, None], None, ),  # 1
+)
+
+
+class update_predecessor_result(object):
+
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('update_predecessor_result')
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(update_predecessor_result)
+update_predecessor_result.thrift_spec = (
 )
 
 

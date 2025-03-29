@@ -26,7 +26,8 @@ service compute {
     # Node-specific Chord operations
     i32 get_id()
     string get_successor()
-    string get_predecessor()
+    NodeInfo get_predecessor()
+    void update_predecessor(1: NodeInfo node)
     void set_predecessor(1: string pred_addr, 2: i32 pred_id)
     list<string> get_finger_table()
     NodeInfo find_successor(1: i32 id)
