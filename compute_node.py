@@ -43,8 +43,8 @@ class ComputeNodeHandler:
         self.pred_id = None
         self.succ = None # tuple
         self.succ_id = None
-        self.finger_table = [None] * int(ceil(log2(self.max_nodes)) + 2) 
-        self.finger_ids = [None] * int(ceil(log2(self.max_nodes))+ 2)
+        self.finger_table = [None] * int(ceil(log2(self.max_nodes)) +1) 
+        self.finger_ids = [None] * int(ceil(log2(self.max_nodes))+ 1)
 
         # Tracks current files used for training
         self.work= set()
@@ -362,7 +362,8 @@ class ComputeNodeHandler:
             else:
                 # Node find its correct successor
                 # succ_id = node.find_successor(entry_val)
-                succ_info = node.find_successor(entry_val)
+                # Maybe change this back, switched to self.find_succ which I believe is right
+                succ_info = self.find_successor(entry_val)
                 succ_id = succ_info.node_id
                 succ_add = eval(succ_info.node_addr)
                 # succ_add = self.get_node_address(succ_id)
@@ -539,7 +540,7 @@ class ComputeNodeHandler:
                 client, transport = self.connect_to_node(ip, port)
                 if client and transport:
                     try:
-                       client.fix_fingers()
+                       client.fix_fingers(None)
                     # Ensures that connection would be closed
                     finally: 
                         transport.close() 
@@ -564,7 +565,7 @@ class ComputeNodeHandler:
     
         # Sanitize
         result = None
-        if not key or key < -1:
+        if key is None or key < -1:
             return None
         # Handle special case where id1 == id2
         if id1 == id2:
@@ -580,6 +581,25 @@ class ComputeNodeHandler:
         print(f"Result: {result}")
         return result
 
+    # def update_finger_table_entry(self, new_node_info, i):
+    #     """
+    #     Update the i-th finger entry if the new node should be responsible for that interval.
+    #     """        
+    #     # If new node is in the interval [start, current finger), update
+    #     if self.finger_ids[i] is None or self.is_between(new_node_info.node_id, self.node_id, self.finger_ids[i]):
+    #         self.finger_ids[i] = new_node_info.node_id
+    #         self.finger_table[i] = eval(new_node_info.node_addr)
+    #         print(f"Updated finger[{i}] to node {new_node_info.node_id} @ {new_node_info.node_addr}")
+            
+    #         # Propagate to predecessor
+    #         if self.pred and self.pred != self.addr:
+    #             ip, port = self.unpack_add(self.pred)
+    #             client, transport = self.connect_to_node(ip, port)
+    #             if client and transport:
+    #                 try:
+    #                     client.update_finger_table_entry(new_node_info, i)
+    #                 finally:
+    #                     transport.close()
 
     '''
     Reach the node responsible for the file
@@ -621,7 +641,7 @@ class ComputeNodeHandler:
                     return self.finger_table[i]
 
         # No suitable entry found, return own successor
-        return self.addr
+        return self.succ
 
     '''
     Forward the data to next node until appropriate node is found 
@@ -691,8 +711,8 @@ class ComputeNodeHandler:
 
         # Checks if current node is responsible for file
         if self.reach_destination(key):
-            if f in self.models:
-                model = self.models[f]
+            if fname in self.models:
+                model = self.models[fname]
 
                 if model['status'] == 'ready':
                     # Convert numpy arrays to list

@@ -164,7 +164,7 @@ class ClientHandler:
 
                 for f in files:
                     # Tries to get model again if was not ready
-                    tries = 2
+                    tries = 3
 
                     for t in range(tries):
                         print(f"Getting model for {f} (attempt {t+1})...")
