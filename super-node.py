@@ -123,21 +123,7 @@ class SuperHandler:
             return
 
         port = self.node_join_port[node_id]
-        # # Get node's port
-        # # Loop through possible host
-        # for valid_port in self.compute_nodes:
-        #     # No active nodes in network
-        #     if not self.active_nodes:
-        #         port = valid_port
-        #     else: 
-        #         # Unpack tuple (ip, port)
-        #         for id, p in self.active_nodes.values():
-        #             print(f"p is {p}")
-        #             # Ensure that the port is valid
-        #             if valid_port != p:
-        #                 port = valid_port
-        #                 break
-        
+       
         # Wrong port used for node
         if port is None:
             print(f"Node {node_id} port value not in list of available ports")

@@ -247,9 +247,8 @@ if __name__ == '__main__':
         print("Failed to distribute data")
         sys.exit(1)
     
-    # Wait a bit for training to progress
-    print("Waiting for training to complete...")
-    print("Wait 120 seconds")
+    # Wait 120s for training to progress
+    print("Waiting for training to complete...wait 120s")
     time.sleep(120)
     
     # Aggregate models and validate
