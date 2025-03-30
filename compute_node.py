@@ -52,9 +52,7 @@ class ComputeNodeHandler:
         # Stores local models for client query
         self.models = {}
 
-      
-
-        # For tracking the path of data through the network (for debugging)
+        # Tracks data path through the network 
         self.data_path = {}
 
      
@@ -96,105 +94,7 @@ class ComputeNodeHandler:
     '''
     Find the successor for specified node
     '''
-    # def find_successor(self, node_id):
-    #     # if not node_id:
-    #     #     return -1
-
-    #     # If node id is between own node id and successor id 
-    #     if self.is_between(node_id, self.node_id, self.succ_id):
-    #         return self.succ_id
-        
-    #     # Find the closest preceding node
-    #     closest = self.get_closest_finger_entry(node_id)
-        
-    #     # No better routing option available 
-    #     if closest == self.addr:
-    #         return self.succ_id
     def find_successor(self, node_id):
-        # print(f"Node {self.node_id} searching for successor of {node_id}")
-        # print(f"Current successor is {self.succ_id}")
-
-        # # If this is the only node in the network
-        # if self.succ_id == self.node_id:
-        #     return NodeInfo(node_id=self.node_id, node_addr=str(self.addr))
-
-        # # Check the between condition
-        # between = self.is_between(node_id, self.node_id, self.succ_id)
-        # print(f"Is {node_id} between {self.node_id} and {self.succ_id}? {between}")
-
-        # # If node id is between own node id and successor id 
-        # if self.is_between(node_id, self.node_id, self.succ_id):
-        #     print(f"Key {node_id} belongs to successor {self.succ_id}")
-        #     return NodeInfo(node_id=self.succ_id, node_addr=str(self.succ)) # Return both ID and address
-        
-        # # Find the closest preceding node
-        # closest = self.get_closest_finger_entry(node_id)
-        # print(f"Closest preceding node for key {node_id} is {closest}")
-        
-        # # No better routing option available 
-        # if closest == self.addr:
-        #     return NodeInfo(node_id=self.succ_id, node_addr=str(self.succ)) # Return both ID and address
-        
-        # # Otherwise, forward the request to the closest node
-        # ip, port = self.unpack_add(closest)
-        # client, transport = self.connect_to_node(ip, port)
-        # if client is None or transport is None:
-        #     print(f"Failed to connect to network via connection point: {ip, port}")
-        #     return
-        # else:
-        #     try:
-        #         return client.find_successor(node_id)
-        #     finally:
-        #         transport.close()
-
-        # # Second try
-        # # If we're the only node
-        # if self.succ_id == self.node_id:
-        #     return NodeInfo(node_id=self.node_id, node_addr=str(self.addr))
-        
-        # # If id is between us and our successor
-        # if self.is_between(id, self.node_id, self.succ_id):
-        #     return NodeInfo(node_id=self.succ_id, node_addr=str(self.succ))
-        
-        # # Otherwise, forward to closest preceding node
-        # n = self.get_closest_finger_entry(id)
-        # if n == self.addr:  # If we're the closest
-        #     return NodeInfo(node_id=self.succ_id, node_addr=str(self.succ))
-        
-        # # Forward to the closest node
-        # n_client, n_transport = self.connect_to_node(*self.unpack_add(n))
-
-        # if n_client and n_transport:
-        #     try:
-        #         return n_client.find_successor(id)
-        #     finally:
-        #         n_transport.close()
-
-        # # 3rd try
-        # # If we're the only node
-        # if self.succ_id == self.node_id:
-        #     return NodeInfo(node_id=self.node_id, node_addr=str(self.addr))
-        
-        # # If id is between us and our successor
-        # if self.is_between(node_id, self.node_id, self.succ_id):
-        #     return NodeInfo(node_id=self.succ_id, node_addr=str(self.succ))
-        
-        # # Otherwise, forward to closest preceding node
-        # closest = self.get_closest_finger_entry(node_id)
-        # if closest == self.addr:  # If we're the closest
-        #     return NodeInfo(node_id=self.succ_id, node_addr=str(self.succ))
-        
-        # # Forward to the closest node
-        # ip, port = self.unpack_add(closest)
-        # client, transport = self.connect_to_node(ip, port)
-        
-        # if client and transport:
-        #     try:
-        #         return client.find_successor(node_id)
-        #     finally:
-        #         transport.close()
-
-        # 4th try
         # If we're the only node in the network
         if self.succ_id == self.node_id:
             return NodeInfo(node_id=self.node_id, node_addr=str(self.addr))
@@ -234,10 +134,10 @@ class ComputeNodeHandler:
     '''
     def get_predecessor(self):
         if self.pred is None:
-        # Return a NodeInfo with empty/default values
+        # Returns empty/default values
             return NodeInfo(node_id=-1, node_addr="")
     
-        # Return a NodeInfo with the predecessor's ID and address
+        # Returns predecessor's ID and address
         return NodeInfo(node_id=self.pred_id, node_addr=str(self.pred))
     
     '''
@@ -247,61 +147,11 @@ class ComputeNodeHandler:
         return self.node_id
     
     
-    # '''
-    # Get corresponding address (host, port) of node by querying the network
-    # '''
-    # def get_node_address(self, node_id):
-    #     # if not node_id:
-    #     #     return -1
-
-    #     if node_id == self.node_id:
-    #         return self.addr
-            
-    #     if node_id == self.succ_id and self.succ is not None:
-    #         return self.succ
-            
-    #     if node_id == self.pred_id and self.pred is not None:
-    #         return self.pred
-            
-    #     # Check finger table
-    #     for i, id in enumerate(self.finger_ids):
-    #         if id == node_id:
-    #             return self.finger_table[i]
-        
-    #     # Query the network to get successor info
-    #     succ_id = self.find_successor(node_id)
-
-    #     # Found node 
-    #     if succ_id == node_id:
-
-    #         succ_ip, succ_port = self.unpack_add(self.succ)
-            
-    #         client, transport = self.connect_to_node(succ_ip, succ_port)
-    #         if client and transport:
-    #             try:
-    #                 return client.get_predecessor()
-    #             # Ensures that connection would be closed
-    #             finally: 
-    #                 transport.close() 
-        
-    #     return self.succ
-    
     '''
     Successor correctly updates its predecessor reference when new node joins network
     '''
-    # def update_predecessor(self, node_id, address):
-    #         # Sanitize
-    #         if not node_id or not address:
-    #             return -1
-            
-    #         # Check if pred_id < node_id <= current node id
-    #         between =  self.is_between(node_id, self.predecessor_id, self.node_id)
-
-    #         if (self.predecessor is None or between):
-    #             self.predecessor = address
-    #             self.predecessor_id = node_id
     def update_predecessor(self, node_info):
-        # Sanitize
+        # Sanitize input 
         if node_info is None or node_info.node_id < 0 or not node_info.node_addr:
             return -1
         
@@ -311,7 +161,6 @@ class ComputeNodeHandler:
         
         # Check if pred_id < node_id <= current node id
         between = self.is_between(node_id, self.pred_id, self.node_id)
-        
         if self.pred is None or between:
             self.pred = address
             self.pred_id = node_id
@@ -320,111 +169,6 @@ class ComputeNodeHandler:
     Nodes join the network, they will need to contact  the supernode, initialize their own 
     predecessors, successors, and finger tables, and update existing nodes in the network.  
     '''
-    # def node_join(self):
-    #     super_client, super_transport = self.connect_to_supernode()
-    #     if super_client is None or super_transport is None:
-    #         print("Failed to connect to supernode")
-    #         return
-    
-    #     try:
-    #         self.node_id = super_client.request_join(self.port)
-    #         print(f"Node joins with ID: {self.node_id}")
-            
-    #         connection_point = super_client.get_node() # Node(ip, port)
-    #         conn_ip, conn_port = connection_point.ip, connection_point.port 
-    #         print(f"Node joins with connection point: {conn_ip, conn_port}")
-            
-    #         # Empty network
-    #         if conn_ip == None or conn_port == None:
-    #             print(f"Network empty, first node joining...")
-                
-    #             # Initialize successor as self
-    #             self.succ = self.addr
-    #             self.succ_id = self.node_id
-                
-    #             # Initialize predecessor as self
-    #             self.pred = self.addr
-    #             self.pred_id = self.node_id
-                
-    #             # Initialize finger table to point to self
-    #             # for i in range(len(self.finger_table)):
-    #             for i in range(1, len(self.finger_table)):
-    #                 self.finger_table[i] = self.addr
-    #                 self.finger_ids[i] = self.node_id
-    #             try:
-    #                 super_client.confirm_join(self.node_id)
-    #             except Exception as e:
-    #                 print(f"Error confirming join with supernode: {e}")
-
-    #         # Node joins via connection point 
-    #         else:
-    #             node_client, node_transport = self.connect_to_node(conn_ip, conn_port)
-        
-    #             if node_client is None or node_transport is None:
-    #                 print(f"Failed to connect to network via connection point: {conn_ip, conn_port}")
-    #                 return
-                
-    #             print(f"Connected to network via connection point: {conn_ip, conn_port}")
-    #             try:
-    #                 # Find successor for new node 
-    #                 # succ_id = client.find_successor(self.node_id)
-    #                 # succ_add = self.get_node_address(succ_id)
-    #                 succ_info = node_client.find_successor(self.node_id)
-    #                 succ_id = succ_info.node_id
-    #                 succ_add = eval(succ_info.node_addr)  # Convert string representation back to tuple
-    #                 print(f"Succ id and succ add after connecting: {succ_id, succ_add}")
-
-    #                 # Update successor
-    #                 self.succ_id = succ_id
-    #                 self.succ = succ_add
-
-    #                 # Update finger table with successor (1st entry)
-    #                 # self.finger_ids[0] = succ_id
-    #                 # self.finger_table[0] = succ_add
-    #                 self.finger_ids[1] = succ_id
-    #                 self.finger_table[1] = succ_add
-
-    #                 # Update own finger table 
-    #                 self.update_finger_table(node_client)
-                
-    #                 for i in range(len(self.finger_table)):
-    #                     print(f"Entry: {self.finger_table[i]}")
-
-    #                 # Update other finger tables
-    #                 self.update_other_finger_tables()
-    #                 print(f"Succ_add: {succ_add}")
-    #                 # Set predecessor of new node
-    #                 # New node asks its successor for its predecessor and updates its own predecessor record
-    #                 ip, port = self.unpack_add(succ_add)
-    #                 client, transport = self.connect_to_node(ip, port)
-    #                 if client and transport:
-    #                     try:
-    #                         # Get sucessor's predecessor
-    #                         # self.pred = client.get_predecessor()
-    #                         # self.pred_id = self.get_node_id(self.pred)
-    #                         pred_info = client.get_predecessor()
-    #                         self.pred_id = pred_info.node_id
-    #                         if pred_info.node_addr:
-    #                             self.pred = eval(pred_info.node_addr) 
-    #                         # Successor updates predecessor to be newly joined node 
-
-    #                         # client.update_predecessor(self.node_id, self.addr)
-    #                         client.update_predecessor(NodeInfo(node_id=self.node_id, node_addr=str(self.addr)))
-
-    #                     # Ensures that connection would be closed
-    #                     finally: 
-    #                         transport.close() 
-
-    #                 super_client.confirm_join(self.node_id)
-    #             # Ensures that connection would be closed
-    #             finally: 
-    #                 node_transport.close() 
-
-    #     except Exception as e:
-    #         print(f"Error during node join process: {e}")
-    #     # Ensures that connection would be closed
-    #     finally: 
-    #         super_transport.close() 
     def node_join(self):
         # Connect to supernode to get ID and connection point
         super_client, super_transport = self.connect_to_supernode()
@@ -436,7 +180,6 @@ class ComputeNodeHandler:
             # Get ID from supernode
             self.node_id = super_client.request_join(self.port)
             print(f"Node joins with ID: {self.node_id}")
-            
             
             # Get connection point from supernode
             connection_point = super_client.get_node()
@@ -475,8 +218,7 @@ class ComputeNodeHandler:
                 if succ_info is None:
                     print("Error: Received None as successor info")
                     return
-                    
-                print(f"Received successor info: {succ_info}")
+                
                 self.succ_id = succ_info.node_id
                 self.succ = eval(succ_info.node_addr)
                 
@@ -512,6 +254,9 @@ class ComputeNodeHandler:
                 
                 # Confirm join with supernode
                 super_client.confirm_join(self.node_id)
+
+                print("\n=== NODE JOIN COMPLETED ===")
+                print(self.print_info())
                 
             finally:
                 node_transport.close()
@@ -938,24 +683,39 @@ class ComputeNodeHandler:
     Stores trained weights, V and W, and status for client retrieval
     '''
     def train(self, fname):
-        try:
+        # try:
             model = mlp()
 
-             # Initialize model before training
-            initialized_model = model.init_training_model(fname, _k = 26, _h =20)
+            # Initialize model before training
+            initialized_model = model.init_training_random(fname, _k=26, _h=20)
             if (initialized_model == False):
                 raise Exception(f"Model initialization failed with file {fname}")
 
             # Train
+            print(f"Training {fname}....")
+            # Store local model 
+            self.models[fname] = {
+                'V': [],
+                'W': [],
+                'status': 'wait'
+            }
             training_error_rate = model.train(eta = 0.0001, epochs = 250)
             if (training_error_rate == -1):
                 self.work.remove(fname)
                 raise Exception("Model training failed!")
-                
+            
+           
             print(f"Finished training {fname} with error rate: {training_error_rate}")
 
             # New weights
-            trained_V, trained_W = model.get_weights()
+            # trained_V, trained_W = model.get_weights()
+              # Get weights - add error checking here
+            weights = model.get_weights()
+            # print(f"This is weights!! {weights}")
+            if not weights or len(weights) != 2:
+                raise Exception(f"Failed to get weights for {fname}: got {weights}")
+                
+            trained_V, trained_W = weights
 
 
             # Store local model 
@@ -964,15 +724,15 @@ class ComputeNodeHandler:
                 'W': trained_W,
                 'status': 'ready'
             }
-
+            
             # Remove file from work set 
             self.work.remove(fname)
 
 
-        except Exception as e:
-            print(f"Exception in training thread: {e}")
-            if fname in self.work:
-                self.work.remove(fname)
+        # except Exception as e:
+        #     print(f"Exception in training thread: {e}")
+        #     if fname in self.work:
+        #         self.work.remove(fname)
 
 
     '''
@@ -984,8 +744,8 @@ class ComputeNodeHandler:
 
         # Checks if current node is responsible for file
         if self.reach_destination(key):
-            if f in self.models:
-                model = self.models[f]
+            if fname in self.models:
+                model = self.models[fname]
 
                 if model['status'] == 'ready':
                     # Convert numpy arrays to list
@@ -994,10 +754,10 @@ class ComputeNodeHandler:
 
                     return WeightMatrices(V=V, W=W, status = 'ready')
                 else:
-                    return WeightMatrices(V=[[]], W=[[]], status = 'wait')
+                    return WeightMatrices(V=[], W=[], status = 'wait')
                 
             else:
-                return WeightMatrices(V=[[]], W=[[]], status = 'not found')
+                return WeightMatrices(V=[], W=[], status = 'not found')
         # Not responsible for file, forward to another node
         else:
             node = self.forward_data(key)
@@ -1011,7 +771,9 @@ class ComputeNodeHandler:
                 # Ensures that connection would be closed
                 finally: 
                     transport.close() 
-    
+            else:
+                print(f"Failed to connect to forwarding node {host}:{port}")
+                return WeightMatrices(V=[], W=[], status='error: connection failed')
     '''
     Connect to another node in the network
     '''
@@ -1030,7 +792,7 @@ class ComputeNodeHandler:
         try:
             # Check if trying to connect to self
             if host == self.host and port == self.port:
-                print(f"Avoiding connection to self ({host}:{port})")
+                # print(f"Avoiding connection to self ({host}:{port})")
                 return None, None
             # print(f"Attempting to connect to {host}:{port}")
             # Don't use localhost - use the actual hostname
@@ -1090,13 +852,23 @@ class ComputeNodeHandler:
             self.data_path[fname] = []
         self.data_path[fname].append(self.node_id)
 
+        print(f"\n=== ROUTING DATA: {fname} ===")
+        print(f"Current node: {self.node_id}")
+        print(f"Current data path: {self.data_path[fname]}")
+
         # Hash fname to numerical key value (0 - MAX_NODES -1)
         key = self.hash_filename(fname)
+        print(f"Hashed key: {key}")
         
         # Reach destination node
         if self.reach_destination(key):
+            print(f"\n=== DESTINATION REACHED FOR: {fname} ===")
             print(f"Node {self.node_id} storing and training on file: {fname}")
-
+            print(f"Responsible node: {self.node_id}")
+            print(f"Complete path: {self.data_path[fname]}")
+            print(f"Key range: {self.get_responsible_key_range()}")
+            print(self.print_info())
+            
             # Add to work set
             self.work.add(fname)
             # Start training
@@ -1172,6 +944,7 @@ if __name__ == '__main__':
     
     # Initialize node by joining the network
     handler.node_join()
+    print("\n=== INITIAL NODE STATE ===")
     print(handler.print_info())
 
     # Start server
@@ -1182,6 +955,13 @@ if __name__ == '__main__':
     
     # Create a threaded server
     server = TServer.TThreadedServer(processor, transport, tfactory, pfactory)
+
+    # Print node info every 30 seconds in a separate thread
+    def print_periodic_info():
+        while True:
+            time.sleep(30)
+            print("\n=== PERIODIC NODE STATUS UPDATE ===")
+            print(handler.print_info())
     
     print(f"Starting compute node {handler.node_id} on port {port}...")
 

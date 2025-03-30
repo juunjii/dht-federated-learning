@@ -97,7 +97,6 @@ class SuperHandler:
         node_id = self.generate_id(self.max_nodes)
         if node_id == -1:
             print(f"Error: {self.max_nodes} exceeds the maximum number of possible nodes in the network - {self.max_nodes}")
-        print(f"Node_ids: {self.node_ids}")
         
         # Tracks current node joining network
         self.node_joining = node_id

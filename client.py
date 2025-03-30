@@ -19,6 +19,8 @@ from thrift.server import TServer
 from supernode import super
 from supernode.ttypes import Node
 from compute import compute
+from compute.ttypes import WeightMatrices
+
 
 from ML import *
 
@@ -161,7 +163,7 @@ class ClientHandler:
                 shared_gradient_V = None
                 shared_gradient_W = None
                 models_collected = 0
-
+               
                 for f in files:
                     # Tries to get model again if was not ready
                     tries = 2
@@ -169,29 +171,30 @@ class ClientHandler:
                     for t in range(tries):
                         print(f"Getting model for {f} (attempt {t+1})...")
                         model = client.get_model(f)
- 
-                    if model.status == "ready":
-                        print(f"Model for {f} has been aggregrated!")
-                        # Convert lists back to numpy arrays
-                        V = np.array(model.V)
-                        W = np.array(model.W)
-                        
-                        # Add to sums
-                        if shared_gradient_V is None:
-                            shared_gradient_V = V
-                            shared_gradient_W = W
-                        else:
-                            shared_gradient_V += V
-                            shared_gradient_W += W
-                        
-                        models_collected+= 1
-                        break
-                    elif model.status == "wait":
-                        print(f"Model for {f} is not ready, wait....")
-                        time.sleep(2)  # Wait for 2s before trying again
-                    else:  
-                        print(f"Model for {f} not found!")
-                        break
+        
+                        if model.status == "ready":
+                            print(f"Model for {f} has been aggregrated!")
+                            # Convert lists back to numpy arrays
+                            V = np.array(model.V)
+                            W = np.array(model.W)
+                            
+                            # Add to sums
+                            if shared_gradient_V is None:
+                                shared_gradient_V = V
+                                shared_gradient_W = W
+                            else:
+                                shared_gradient_V += V
+                                shared_gradient_W += W
+                            
+                            models_collected+= 1
+
+                            break
+                        elif model.status == "wait":
+                            print(f"Model for {f} is not ready, wait for 30s....")
+                            time.sleep(30)  
+                        else:  
+                            print(f"Model for {f} not found!")
+                            break
 
                 print(f"Aggregated {models_collected} models")
 
@@ -206,7 +209,7 @@ class ClientHandler:
                 # Validate aggregated model
                 model = mlp()
                 
-                validate_file = os.path.join(dir, "validate_letters.txt")
+                validate_file = "validate_letters.txt"
                 # Initialize model before training
                 initialized_model = model.init_training_model(validate_file, shared_gradient_V, shared_gradient_W)
                 if (initialized_model == False):
@@ -246,7 +249,8 @@ if __name__ == '__main__':
     
     # Wait a bit for training to progress
     print("Waiting for training to complete...")
-    time.sleep(10)
+    print("Wait 120 seconds")
+    time.sleep(120)
     
     # Aggregate models and validate
     if client.aggregrate_models(training_dir) == -1:
