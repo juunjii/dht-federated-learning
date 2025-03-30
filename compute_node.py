@@ -779,4 +779,10 @@ if __name__ == '__main__':
     
     print(f"Starting compute node {handler.node_id} on port {port}...")
 
+    try:
+        server.serve()
+    except KeyboardInterrupt:
+        print("Node shutting down")
+    
+
     
