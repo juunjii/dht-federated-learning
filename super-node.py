@@ -197,8 +197,11 @@ def main():
     server = TServer.TSimpleServer(processor, transport, tfactory, pfactory)
 
     print(f"Starting supernode on port {port} with network capacity of {max_nodes}...")
- 
-    server.serve()
+    
+    try:
+        server.serve()
+    except KeyboardInterrupt:
+        print("Node shutting down")
     
 
 if __name__ == '__main__':
